@@ -1,0 +1,9 @@
+[Event "Muestra con flechas"]
+[Site "https://lichess.org/abcd1234"]
+[Date "2026.01.15"]
+[White "Alice"]
+[Black "Bob"]
+[Result "1-0"]
+[ECO "C50"]
+
+1. e4 { [%cal Ge2e4,Gd2d4] [%csl Rc4,Yf5] } 1... e5 { [%cal Re7e5] } 2. Nf3 $1 { [%cal Gg1f3] } 2... Nc6 $2 3. Bb5 { [%CAL Gf1b5] } (3. Bc4 { [%cal Gf1c4] } 3... Bc5) 3... a6 $6 4. Ba4 1-0

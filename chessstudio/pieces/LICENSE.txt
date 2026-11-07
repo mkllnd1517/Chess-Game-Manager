@@ -1,0 +1,38 @@
+Chess piece artwork: "cburnett" set
+====================================
+
+The SVG chess piece images in this directory are from the "cburnett" set by
+Colin M. L. Burnett (https://en.wikipedia.org/wiki/User:Cburnett).
+
+They are the copies distributed by the Lichess project, which licenses this
+set under the GNU General Public License, version 2 or later (GPLv2+):
+https://github.com/lichess-org/lila/tree/master/public/piece/cburnett
+(see the "public/piece/cburnett" entry in lila's COPYING.md).
+
+The files are used UNMODIFIED.
+
+License
+-------
+
+Copyright (c) Colin M. L. Burnett
+
+This artwork is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+
+As part of ChessStudio, these images are redistributed under the GNU General
+Public License version 3 or later (exercising the "or any later version"
+option of the GPLv2+ grant), which is the license of the application. The full
+GPLv2 text is included as GPL-2.0.txt in this directory; the GPLv3 text is in
+the LICENSE file at the root of the project.
+
+This artwork is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+Attribution
+-----------
+
+Please retain this notice and credit "Colin M. L. Burnett (cburnett piece
+set), via Lichess" when redistributing the artwork.

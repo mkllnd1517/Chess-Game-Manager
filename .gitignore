@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Pruebas / cachés
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Entornos / IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Datos generados por la aplicación (bases de datos, preparación)
+*.csdb
+*.csdb-wal
+*.csdb-shm
+*.pgn.tmp
+capturas/demo.csdb
+capturas/*.pgn
+
+# Motores UCI (no se versionan; cada usuario aporta el suyo)
+stockfish
+stockfish.exe
+*.uci
