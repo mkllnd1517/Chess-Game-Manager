@@ -8,7 +8,9 @@ from pathlib import Path
 import chess
 import pytest
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QEvent, Qt
+from PySide6.QtGui import QKeyEvent
+from PySide6.QtWidgets import QApplication, QDialog
 
 from chessstudio.board_widget import BoardWidget
 from chessstudio.database import ChessDatabase
@@ -70,6 +72,20 @@ def test_open_pgn_with_arrows_shows_on_board(qapp, tmp_path):
     qapp.processEvents()
     assert (12, 28) in game_window.board_widget.arrows
     assert 26 in game_window.board_widget.marks
+    window.close()
+
+
+def test_direct_open_pgn_keeps_readable_arrows(qapp):
+    """Abrir un PGN sin importarlo también carga %cal/%csl en el tablero."""
+    window = MainWindow()
+    window.start_open_pgn(str(SAMPLE))
+    assert wait_for(qapp, lambda: window._open_thread is None), "El PGN no terminó de abrirse"
+    game_window = window.current_game_window()
+    assert game_window is not None
+    game_window.doc.goto_next()  # 1. e4
+    qapp.processEvents()
+    assert (12, 28) in game_window.board_widget.arrows
+    assert game_window.board_widget.marks[26] == 2
     window.close()
 
 
@@ -144,6 +160,26 @@ def test_board_drawings_api(qapp):
     assert data["marks"] == {"26": 2}
     board.clear_drawings()
     assert not board.arrows and not board.marks
+
+
+def test_pgn_path_from_command_line(tmp_path):
+    from chessstudio.launch import pgn_path_from_arguments
+
+    game = tmp_path / "partida.PGN"
+    game.write_text("[Result \"*\"]\n\n*\n", encoding="utf-8")
+    assert pgn_path_from_arguments(["chessstudio", "--other", str(game)]) == str(game)
+    assert pgn_path_from_arguments(["chessstudio", str(tmp_path / "missing.pgn")]) is None
+    assert pgn_path_from_arguments(["chessstudio", str(tmp_path / "notes.txt")]) is None
+
+
+def test_variation_chooser_accepts_right_arrow(qapp):
+    from chessstudio.main_window import VariationChooserDialog
+
+    dialog = VariationChooserDialog([(1, "1. e4"), (2, "1. d4")])
+    event = QKeyEvent(QEvent.KeyPress, Qt.Key_Right, Qt.NoModifier)
+    QApplication.sendEvent(dialog.list_widget, event)
+    assert dialog.result() == QDialog.Accepted
+    assert dialog.selected_id() == 1
 
 
 def test_notation_navigation(qapp):

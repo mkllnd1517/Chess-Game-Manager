@@ -1,80 +1,91 @@
-# Avisos de terceros
+# Avisos de terceros y distribución
 
-Chess Game Manager se distribuye bajo la licencia **GNU General Public License v3.0 o cualquier versión posterior (GPL-3.0-or-later)**. El texto completo de la licencia se encuentra en el archivo [`LICENSE`](LICENSE).
+> **Resumen:** ChessStudio — Chess Game Manager se publica como
+> **GPL-3.0-or-later**. El texto completo está en [`LICENSE`](LICENSE) y el
+> aviso de copyright y garantía de esta distribución está en [`NOTICE`](NOTICE).
+>
+> Este inventario se ha contrastado con las dependencias declaradas en
+> `pyproject.toml` y `requirements.txt`, los recursos incluidos y la cadena de
+> empaquetado del repositorio a fecha de la versión 0.6.0. No sustituye la
+> comprobación jurídica de una publicación concreta ni constituye asesoramiento
+> legal.
 
-Este documento identifica los componentes de terceros conocidos a partir de la información disponible del proyecto. Debe mantenerse actualizado conforme cambien `requirements.txt`, los recursos incluidos o la forma de distribuir la aplicación.
+## 1. Componentes ejecutados por la aplicación
 
-## 1. Dependencias de Python
-
-Las dependencias indicadas a continuación se instalan mediante `pip`; no se afirma que sus paquetes estén copiados o vendorizados dentro del repositorio.
-
-| Componente | Licencia publicada | Uso en Chess Game Manager | Referencia |
+| Componente | Licencia declarada por el proyecto | Uso | Obligación práctica al publicar un binario |
 |---|---|---|---|
-| `python-chess` (`chess`) | GPL-3.0-or-later | Reglas de ajedrez, lectura y escritura PGN, comunicación UCI y funciones relacionadas. | [Repositorio oficial](https://github.com/niklasf/python-chess) |
-| PySide6 / Qt for Python | LGPLv3 y/o GPL, según el componente y las condiciones aplicables; también existe licencia comercial | Interfaz gráfica de escritorio. | [Licencias de Qt](https://doc.qt.io/qt-6/licensing.html) · [Qt for Python](https://wiki.qt.io/Qt_for_Python) |
-| `keyring` | MIT | Acceso al llavero del sistema para almacenar el token de Lichess. Dependencia opcional. | [Repositorio oficial](https://github.com/jaraco/keyring) |
+| [`python-chess`](https://github.com/niklasf/python-chess) (paquete PyPI `chess`) | GPL-3.0-or-later | Reglas, PGN y protocolo UCI. | Distribuir ChessStudio como GPL-3.0-or-later, conservar el aviso de `python-chess` y ofrecer el código fuente correspondiente. |
+| [PySide6 / Qt for Python](https://doc.qt.io/qtforpython-6/) (`PySide6-Essentials` y `shiboken6`) | LGPL-3.0-only **o** GPL-2.0-only/GPL-3.0-only, según el componente y la modalidad elegida; Qt también ofrece opciones comerciales. | Interfaz Qt, SVG, red y widgets. | Para la distribución comunitaria basada en las ruedas LGPL de Qt, conservar los textos y avisos de Qt/PySide6 que acompañen a la versión empaquetada, usar enlace dinámico cuando corresponda y cumplir las condiciones LGPL aplicables. Una alternativa GPL o comercial cambia las obligaciones. |
+| [`keyring`](https://github.com/jaraco/keyring) | MIT | Acceso opcional al llavero del sistema para el token de Lichess. | Conservar su aviso MIT si se redistribuye la biblioteca. La aplicación funciona con su almacenamiento alternativo si no está disponible. |
 
-### Notas sobre las dependencias
+### Nota sobre PySide6/Qt
 
-- **python-chess:** el proyecto publica su código bajo GPL-3.0-or-later. Su uso es un motivo relevante para que Chess Game Manager se distribuya bajo GPL-3.0-or-later. Consulta siempre la licencia de la versión concreta instalada.
-- **PySide6 / Qt for Python:** Qt ofrece distintas modalidades de licencia, incluidas LGPL y GPL, además de licencias comerciales. La licencia y las obligaciones aplicables dependen de los módulos y componentes concretos utilizados y de cómo se distribuyan. No debe asumirse que la mera instalación mediante `pip` o el enlace dinámico resuelve por sí solo todas las obligaciones. Antes de empaquetar o redistribuir la aplicación, revisa los avisos y archivos de licencia de la versión concreta de PySide6/Qt y los requisitos de la licencia elegida.
-- **keyring:** se publica bajo licencia MIT. Si se redistribuye código o archivos de licencia de esta biblioteca, deben conservarse los avisos de copyright y el texto de licencia exigidos por sus condiciones.
+Qt no es una única licencia: los módulos instalados y el modo de distribución
+son determinantes. **Antes de publicar un `.exe`, `.app`, AppImage u otro
+paquete**, revisa los archivos `LICENSE*` y `NOTICE*` que entrega la versión
+exacta de PySide6/Qt incorporada por PyInstaller. Inclúyelos junto al binario,
+no sustituyas sus avisos y verifica que las bibliotecas de Qt se mantengan
+reemplazables cuando se use la ruta LGPL. Si se usa Qt con licencia comercial,
+conserva la documentación contractual correspondiente.
 
-Este inventario no debe considerarse exhaustivo hasta contrastarlo con todas las dependencias directas y transitivas declaradas en `requirements.txt` y con el código real del proyecto.
+## 2. Recursos incluidos en este repositorio
 
-## 2. Recursos gráficos incluidos
-
-| Recurso | Autoría / procedencia | Licencia indicada por la fuente | Ubicación |
+| Recurso | Autoría / procedencia | Licencia | Archivos y cumplimiento |
 |---|---|---|---|
-| Conjunto de piezas de ajedrez `cburnett` (12 archivos SVG) | Colin M. L. Burnett; distribución a través de Lichess | GNU GPL versión 2 o cualquier versión posterior (GPL-2.0-or-later) | `chessstudio/pieces/` |
+| Piezas SVG `cburnett` | Colin M. L. Burnett; copias distribuidas por Lichess. | GPL-2.0-or-later. | Las 12 piezas están en `chessstudio/pieces/`; se conservan [`LICENSE.txt`](chessstudio/pieces/LICENSE.txt) y [`GPL-2.0.txt`](chessstudio/pieces/GPL-2.0.txt). Se usan sin modificar. La opción «o posterior» permite su redistribución bajo GPL-3.0-or-later junto con la aplicación. |
+| Iconos `chessstudio.svg` y `chessstudio.ico` | Chess Game Manager contributors, 2026. | GPL-3.0-or-later. | El SVG está en `chessstudio/assets/`; el ICO para el ejecutable e instalador de Windows está en `packaging/windows/`. El SVG declara su SPDX y ambos se cubren por [`NOTICE`](NOTICE). |
 
-La información de atribución y licencia del repositorio de Lichess identifica el conjunto `cburnett` como obra de Colin M. L. Burnett y lo señala como GPLv2+. Consulta:
+Referencia de las piezas cburnett: [COPYING de Lichess](https://github.com/lichess-org/lila/blob/master/COPYING.md) y [directorio original](https://github.com/lichess-org/lila/tree/master/public/piece/cburnett).
 
-- [Avisos de copyright y licencias de Lichess](https://github.com/lichess-org/lila/blob/master/COPYING.md)
-- [Directorio de piezas cburnett en Lichess](https://github.com/lichess-org/lila/tree/master/public/piece/cburnett)
+## 3. Herramientas de construcción (no son dependencias de ejecución)
 
-Según la información facilitada para este proyecto, las piezas se utilizan sin modificar. Deben conservarse los avisos de autoría y el texto de licencia que acompañen a los archivos redistribuidos. Comprueba que `chessstudio/pieces/LICENSE.txt` y, si se incluye, `chessstudio/pieces/GPL-2.0.txt` estén presentes y correspondan efectivamente a los recursos distribuidos.
+| Herramienta | Licencia publicada | Papel |
+|---|---|---|
+| [PyInstaller](https://pyinstaller.org/) | GPL-2.0-or-later con excepción para el *bootloader*. | Produce la carpeta ejecutable `dist/ChessStudio`. La excepción permite distribuir la salida sin que PyInstaller imponga por sí mismo GPL a todo el resultado; las dependencias y el código de ChessStudio siguen determinando las obligaciones reales. Conserva los avisos que PyInstaller incorpore en una publicación binaria. |
+| [Inno Setup 6](https://jrsoftware.org/isinfo.php) | Consulta su licencia de distribución vigente. | Compila el instalador de Windows definido en `packaging/windows/ChessStudio.iss`. No se incluye como dependencia de ejecución del repositorio. |
+| setuptools | MIT | Construye el paquete Python. No se redistribuye como parte de la aplicación final. |
 
-La indicación GPL-2.0-or-later permite al receptor aplicar una versión posterior de la GPL a ese material, conforme a los términos de la licencia. No debe presentarse como si la autoría o la licencia original de las piezas desaparecieran o se sustituyeran por la licencia del resto del proyecto.
+## 4. Componentes expresamente no incluidos
 
-## 3. Motores UCI: no incluidos ni redistribuidos
+### Motores UCI
 
-Chess Game Manager **no incluye, descarga, aloja ni redistribuye Stockfish ni ningún otro motor UCI**.
+ChessStudio **no incluye, descarga, aloja ni redistribuye** Stockfish ni ningún
+otro motor UCI. La aplicación solo permite seleccionar un ejecutable que el
+usuario ya haya obtenido. Si en el futuro se distribuye un motor junto a la
+aplicación, habrá que añadir su código fuente, licencia, avisos y cualquier
+otra obligación exigida por su licencia antes de publicar.
 
-La aplicación permite al usuario seleccionar un ejecutable UCI que haya obtenido por su cuenta. Por tanto:
+### Servicios de Lichess
 
-- No se incluyen ejecutables, bibliotecas ni código fuente de Stockfish en este repositorio.
-- No se presenta Stockfish como parte de Chess Game Manager ni como una dependencia empaquetada.
-- Cada usuario es responsable de obtener el motor de una fuente legítima y respetar las condiciones de su licencia.
-- Si en el futuro se decide distribuir un motor junto con la aplicación, habrá que revisar previamente su licencia y cumplir todas las obligaciones de redistribución correspondientes.
+La integración consulta el explorador de aperturas y puede abrir partidas
+públicas de Lichess. La marca, los servicios y los datos de Lichess pertenecen
+a sus titulares. El token es aportado por cada persona usuaria; nunca se
+incluye en el repositorio ni en los instaladores. El uso está sujeto a los
+[términos de Lichess](https://lichess.org/terms-of-service) y a las condiciones
+de su API. La integración no implica patrocinio, afiliación ni aprobación.
 
-Referencia: [sitio oficial de Stockfish](https://stockfishchess.org/).
+## 5. Lista de verificación para una publicación pública
 
-## 4. Servicios externos y token de Lichess
+Antes de adjuntar un instalador a una *release*:
 
-La aplicación puede conectarse a servicios de Lichess para consultar su explorador de aperturas y descargar partidas destacadas.
+1. Ejecuta `python -m pip install -e ".[test,build]"` y las pruebas.
+2. Genera el paquete con `python scripts/build_release.py` desde un entorno
+   limpio y anota las versiones exactas instaladas (`python -m pip freeze`).
+3. Comprueba que el binario contiene `LICENSE`, `NOTICE`,
+   `THIRD_PARTY_NOTICES.md`, las piezas `cburnett` y sus textos GPL.
+4. Añade los avisos/licencias de las bibliotecas Qt/PySide6 que PyInstaller haya
+   copiado y conserva un enlace claro al código fuente correspondiente de esta
+   misma versión (por ejemplo, la etiqueta de GitHub de la *release*).
+5. No empaquetes bases personales, PGN privados, tokens, motores UCI ni claves.
+6. Firma el instalador y publica hashes cuando se disponga de un certificado de
+   firma; prueba la instalación y desinstalación en una máquina limpia.
+7. Actualiza este documento si cambian dependencias, recursos, versiones o la
+   forma de distribución.
 
-- Cada usuario configura su propio token.
-- El token no se incluye en el repositorio.
-- El uso de los servicios de Lichess está sujeto a sus [términos de servicio](https://lichess.org/terms-of-service) y a las condiciones aplicables a su API.
-- La marca, el nombre y los servicios de Lichess pertenecen a sus respectivos titulares. La mención de Lichess identifica una integración y no implica patrocinio, afiliación ni aprobación del proyecto.
+## 6. Alcance
 
-## 5. Licencia del proyecto y compatibilidad
-
-El código propio de Chess Game Manager se publica bajo **GPL-3.0-or-later**, según el archivo `LICENSE`.
-
-La selección de esta licencia tiene en cuenta, entre otros aspectos, el uso de `python-chess`, que se publica bajo GPL-3.0-or-later. Los recursos y componentes de terceros conservan sus propias licencias y avisos.
-
-No se debe interpretar esta sección como una certificación automática de compatibilidad de todos los componentes. Para cada versión pública:
-
-1. Comprueba las dependencias exactas de `requirements.txt`.
-2. Identifica las licencias de las versiones realmente utilizadas.
-3. Revisa los módulos de Qt/PySide6 utilizados y sus condiciones.
-4. Conserva los avisos de copyright y los textos de licencia de los recursos incluidos.
-5. Actualiza este archivo cuando se añadan, retiren o sustituyan dependencias o recursos.
-
-## 6. Aviso
-
-Este documento es informativo y no constituye asesoramiento jurídico ni una garantía de que se hayan satisfecho todas las obligaciones de licencia. Se ha redactado a partir de los componentes y recursos identificados para el proyecto; la revisión definitiva requiere contrastar el código, los archivos distribuidos y las versiones concretas de todas las dependencias.
-
-Si se detecta un componente de terceros que no figure aquí, debe añadirse su nombre, versión, procedencia, licencia, uso y los avisos que exija su licencia antes de publicar una distribución que lo incluya.
+Esta documentación pretende hacer visibles las obligaciones conocidas y evitar
+atribuciones engañosas. No garantiza que todos los requisitos legales de una
+jurisdicción, una dependencia transitiva o una distribución futura estén
+cubiertos. Para una distribución comercial, con datos de terceros o con
+requisitos especiales, consulta a una persona profesional especializada.

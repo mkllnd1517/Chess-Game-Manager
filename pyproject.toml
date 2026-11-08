@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chess-game-manager"
+version = "0.6.0"
+description = "Gestor de partidas de ajedrez, explorador de aperturas y preparación de rivales."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
+license-files = [
+  "LICENSE",
+  "NOTICE",
+  "THIRD_PARTY_NOTICES.md",
+  "chessstudio/pieces/LICENSE.txt",
+  "chessstudio/pieces/GPL-2.0.txt",
+]
+authors = [{name = "Chess Game Manager contributors"}]
+keywords = ["chess", "pgn", "uci", "chess-database", "pyside6"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: X11 Applications :: Qt",
+  "Environment :: Win32 (MS Windows)",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: Education",
+  "Natural Language :: Spanish",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Games/Entertainment :: Board Games",
+]
+dependencies = [
+  # Widgets, Network y SVG pertenecen a Essentials. Evitamos el meta-paquete
+  # PySide6, WebEngine, PDF y otros módulos que ChessStudio no utiliza.
+  "PySide6-Essentials>=6.5,<7",
+  "chess>=1.10",
+  "keyring>=24.0",
+]
+
+[project.optional-dependencies]
+build = ["pyinstaller>=6.0"]
+test = ["pytest>=7.0"]
+
+[project.urls]
+Homepage = "https://github.com/mkllnd1517/Chess-Game-Manager"
+Repository = "https://github.com/mkllnd1517/Chess-Game-Manager"
+Issues = "https://github.com/mkllnd1517/Chess-Game-Manager/issues"
+
+[project.gui-scripts]
+chessstudio = "chessstudio.app:main"
+
+[tool.setuptools.packages.find]
+include = ["chessstudio*"]
+
+[tool.setuptools.package-data]
+chessstudio = [
+  "assets/*.svg",
+  "pieces/*.svg",
+  "pieces/*.txt",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

@@ -124,6 +124,33 @@ def test_clearing_drawings_removes_tags():
     assert "Re7e5" in text
 
 
+def test_drawings_stay_with_their_pgn_node_after_transposition():
+    """Dos variantes pueden llegar al mismo tablero con dibujos distintos."""
+    game = chess.pgn.Game()
+    board = game.board()
+
+    main = game.add_variation(board.parse_san("Nf3"))
+    board.push(main.move)
+    black = main.add_variation(board.parse_san("d5"))
+    board.push(black.move)
+    main_end = black.add_variation(board.parse_san("g3"))
+    main_end.comment = "[%cal Gg1f3]"
+
+    board = game.board()
+    branch = game.add_variation(board.parse_san("g3"))
+    board.push(branch.move)
+    black = branch.add_variation(board.parse_san("d5"))
+    board.push(black.move)
+    branch_end = black.add_variation(board.parse_san("Nf3"))
+    branch_end.comment = "[%cal Gg2g3]"
+
+    doc = GameDoc(game)
+    doc.go_to(main_end)
+    assert doc.current_drawings()["arrows"] == {"6,21": 1}
+    doc.go_to(branch_end)
+    assert doc.current_drawings()["arrows"] == {"14,22": 1}
+
+
 # --------------------------------------------------------------------- #
 # GameDoc: navegación y variantes
 # --------------------------------------------------------------------- #

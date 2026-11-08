@@ -1,335 +1,229 @@
-# Chess Game Manager
+# ChessStudio — Chess Game Manager
 
-**Gestor de bases de datos de ajedrez, explorador de aperturas y herramienta de preparación de rivales.**
+> Gestiona tu colección PGN, prepara rivales y analiza posiciones con tus propios motores UCI desde una aplicación de escritorio libre.
 
-Chess Game Manager nace con un objetivo: ofrecer una herramienta gratuita y de código abierto para jugadores que necesitan organizar sus partidas, estudiar aperturas y preparar a sus rivales desde un único entorno de escritorio.
+[![Licencia: GPL-3.0-or-later](https://img.shields.io/badge/licencia-GPL--3.0--or--later-3da639.svg)](LICENSE)
+[![Pruebas](https://github.com/mkllnd1517/Chess-Game-Manager/actions/workflows/tests.yml/badge.svg)](https://github.com/mkllnd1517/Chess-Game-Manager/actions/workflows/tests.yml)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776ab.svg)](pyproject.toml)
 
-Plataformas como Lichess ofrecen gratuitamente servicios excelentes de análisis y exploración de aperturas. Sin embargo, no todos los jugadores tienen las mismas necesidades ni siguen el mismo flujo de trabajo. Quienes trabajan habitualmente con colecciones PGN propias, quieren preparar a un rival concreto a partir de sus partidas o prefieren analizar posiciones con sus propios motores UCI pueden beneficiarse de una aplicación de escritorio especializada.
+ChessStudio reúne en un único entorno local las tareas habituales de estudio:
+abrir e indexar colecciones PGN, explorar repertorios, preparar a un rival,
+editar variantes y analizar posiciones. Tus bases, partidas y motores siguen
+bajo tu control; no se incluye ni se descarga ningún motor de ajedrez.
 
-Con Chess Game Manager puedes importar un PGN con las partidas de un oponente y estudiar su repertorio, consultar y comparar estadísticas de tus propias bases de datos, analizar posiciones con el motor UCI que elijas y conservar comentarios, variantes y anotaciones en tus partidas. El propósito es reunir estas herramientas en una aplicación gratuita, abierta y centrada en las bases de datos del usuario.
+<p align="center">
+  <img src="capturas/1_piezas_comentarios_rival.png" alt="ChessStudio con tablero, notación enriquecida y preparación de rival" width="820">
+</p>
 
-## Características principales
+## Lo más importante
 
-- **Preparación de rivales:** flujo guiado de tres pasos para crear una base de preparación a partir de un PGN con las partidas del oponente y estudiar su repertorio.
-- **Explorador de aperturas:** consulta estadísticas de tus bases de datos locales o utiliza el explorador online de Lichess.
-- **Análisis con motores UCI:** utiliza Stockfish u otros motores compatibles que proporciones tú mismo, con análisis continuo, MultiPV y fijación de posiciones.
-- **Gestión de partidas:** importa, organiza, busca, edita y exporta partidas PGN.
-- **Edición avanzada de PGN:** conserva comentarios, variantes, flechas, casillas marcadas y símbolos de evaluación.
-- **Tablero interactivo:** navega por las partidas, crea variantes y añade anotaciones directamente sobre el tablero.
-- **Procesamiento en segundo plano:** importa y abre archivos PGN con indicadores de progreso y opción de cancelación.
-- **Seguridad:** almacenamiento del token de Lichess mediante el llavero del sistema cuando está disponible y tratamiento defensivo de los PGN externos.
+- **PGN bien conservado:** importa, abre, busca, edita y exporta partidas con
+  comentarios, variantes, NAG, evaluaciones, relojes, flechas `%cal` y casillas
+  `%csl`.
+- **Tablero pensado para estudiar:** dibuja anotaciones con clic derecho,
+  navega con el teclado y crea o continúa variantes directamente al mover una
+  pieza.
+- **Preparación de rivales:** crea una base de referencia desde un PGN y estudia
+  el repertorio por color, o compáralo con tu propia base.
+- **Explorador de aperturas:** consulta estadísticas locales o las bases de
+  Lichess, con filtros de ritmo y Elo.
+- **Motores UCI propios:** análisis continuo, MultiPV y posición fijada. Elige
+  el ejecutable UCI que hayas obtenido legalmente; ChessStudio no distribuye
+  Stockfish ni ningún otro motor.
+- **Fluida con archivos grandes:** las importaciones y aperturas se procesan en
+  segundo plano, se pueden cancelar y la notación larga se renderiza de forma
+  progresiva.
+- **Privacidad y seguridad:** token de Lichess en el llavero del sistema cuando
+  está disponible, peticiones HTTPS restringidas a Lichess y PGN externo tratado
+  como contenido no confiable.
 
-## Instalación
+## Instalar y abrir desde el escritorio
 
-### Requisitos
+### Opción recomendada para usuarios de Windows
 
-- Python 3.10 o posterior.
-- Un entorno de escritorio compatible con PySide6.
-- Un motor compatible con el protocolo UCI, si quieres utilizar las funciones de análisis.
+En una publicación oficial, descarga `ChessStudio-Setup-<versión>.exe` desde
+[**Releases**](https://github.com/mkllnd1517/Chess-Game-Manager/releases),
+ejecútalo y marca **«Crear un acceso directo en el escritorio»**.
+Después podrás abrir ChessStudio desde el escritorio o el menú Inicio: no hay
+que instalar Python ni ejecutar `main.py`. El instalador también asocia los
+archivos `.pgn`, de modo que podrás abrir una partida con doble clic.
 
-**Los motores de ajedrez no se incluyen ni se distribuyen con Chess Game Manager.** Cada usuario debe obtener e instalar su propio motor y seleccionar el ejecutable desde la aplicación. Consulta la sección [Motores UCI](#motores-uci) y las condiciones de licencia del motor que decidas utilizar.
+> El repositorio contiene una receta reproducible para generar ese instalador;
+> consulta [Crear un instalable](#crear-un-instalable). Publica únicamente
+> binarios generados y verificados desde una etiqueta de este repositorio.
 
-### Instalar desde el código fuente
+### Instalar desde Python
 
-Clona el repositorio e instala las dependencias:
+Necesitas Python 3.10 o posterior y un escritorio compatible con Qt.
 
 ```bash
-git clone https://github.com/<tu-usuario>/chess-game-manager.git
-cd chess-game-manager
-
-pip install -r requirements.txt
-python main.py
+git clone https://github.com/mkllnd1517/Chess-Game-Manager.git
+cd Chess-Game-Manager
+python -m pip install --upgrade pip
+python -m pip install .
+chessstudio
 ```
 
-En Linux puede ser necesario instalar bibliotecas del sistema requeridas por Qt, como `libxcb` o `libxkbcommon`.
+El comando `chessstudio` es un lanzador gráfico instalado por el paquete. El
+archivo `main.py` permanece solo como lanzador de compatibilidad para clones
+antiguos; no forma parte del flujo normal de uso.
 
-Para ejecutar las pruebas sin mostrar una ventana:
+En Linux, una instalación `pip` también puede añadirse al menú de aplicaciones
+con [`packaging/linux/io.github.mkllnd1517.ChessStudio.desktop`](packaging/linux/io.github.mkllnd1517.ChessStudio.desktop).
+Si usas la carpeta creada por PyInstaller, sigue las instrucciones de
+[`packaging/linux/README.md`](packaging/linux/README.md).
+
+### Crear un instalable
+
+La compilación produce una aplicación autocontenida y no incorpora un motor
+UCI. Hazla en el sistema operativo de destino:
 
 ```bash
-QT_QPA_PLATFORM=offscreen python -m pytest tests -q
+python -m pip install -e ".[test,build]"
+python scripts/build_release.py
 ```
 
-**Dependencia opcional:** se recomienda `keyring` para guardar el token de Lichess en el llavero del sistema operativo. Si no está instalado o no hay un llavero disponible, la aplicación utiliza el mecanismo alternativo de almacenamiento local implementado por el proyecto.
-
-## Interfaz y primeros pasos
-
-La ventana principal se organiza en tres zonas:
-
-| Zona | Contenido |
-|---|---|
-| Izquierda | Lista de partidas de la base de datos abierta. |
-| Centro | Pestañas de partidas con tablero interactivo y notación. |
-| Derecha | Explorador de aperturas, motor UCI y herramientas de preparación de rivales. |
-
-Puedes abrir varias partidas simultáneamente en pestañas independientes. Los paneles laterales se pueden mostrar u ocultar desde el menú **Ver** y reorganizar arrastrándolos.
-
-### Primeros pasos
-
-Al iniciar la aplicación se crea o abre automáticamente la base de datos principal:
-
-```text
-Documentos/ChessStudio/default.csdb
-```
-
-Para empezar:
-
-1. Pulsa **Importar PGN a la base...** y selecciona uno o varios archivos PGN.
-2. La importación se ejecutará en segundo plano. Puedes seguir utilizando la aplicación y cancelar el proceso si es necesario.
-3. Haz doble clic en una partida de la lista para abrirla.
-4. Navega por sus jugadas y utiliza los paneles laterales para explorar aperturas o analizar posiciones.
-
-Las flechas y las casillas anotadas que estén incluidas en el PGN se muestran automáticamente sobre el tablero.
-
-### Gestión de bases de datos y archivos PGN
-
-Chess Game Manager permite trabajar tanto con bases de datos locales como con archivos PGN independientes.
-
-| Acción | Descripción |
-|---|---|
-| **Importar PGN a la base...** | Incorpora uno o varios archivos PGN a la base de datos abierta. |
-| **Abrir PGN...** | Abre un archivo directamente en una pestaña, sin importarlo a la base. Si contiene varias partidas, abre la primera y muestra un aviso. |
-| **Guardar en base** (`Ctrl+S`) | Guarda la partida abierta, incluidos comentarios, variantes y anotaciones. Si todavía no está en la base, crea una entrada nueva. |
-| **Exportar partida...** | Exporta únicamente la partida abierta a un PGN estándar, incluidos los cambios todavía no guardados. |
-| **Abrir base** (`Ctrl+O`) | Permite abrir otra base de datos. |
-
-La exportación utiliza escritura atómica para evitar dejar archivos incompletos si se produce un error. El nombre sugerido sigue el formato `Blancas - Negras.pgn`.
-
-### Buscar y eliminar partidas
-
-**Buscar (`Ctrl+F`)**
-
-Permite filtrar partidas por jugador, evento, fecha, resultado, código ECO y posición actual del tablero.
-
-**Eliminar partidas**
-
-Selecciona una o varias partidas en la lista y utiliza **Eliminar de la base...**, disponible en la barra de herramientas, el menú **Partida**, el menú contextual o la tecla `Supr`.
-
-La eliminación requiere confirmación y no se puede deshacer. Si una partida eliminada estaba abierta en una pestaña, esta se conserva como copia independiente. Si posteriormente la guardas, se crea una nueva entrada en la base de datos.
-
-### Navegar y editar partidas
-
-Puedes navegar por una partida mediante:
-
-- Las flechas `←` y `→`.
-- Las teclas `Inicio` y `Fin`.
-- Los botones de navegación.
-- Un clic sobre cualquier jugada de la notación.
-
-También puedes mover piezas directamente en el tablero para crear nuevas jugadas o variantes.
-
-Al hacer clic derecho sobre una jugada de la notación puedes editar comentarios, añadir o quitar símbolos de evaluación (`!`, `?`, `±`, etc.), eliminar variantes o promover una variante a línea principal.
-
-Las evaluaciones `[%eval]` y los relojes `[%clk]` de PGN externos se muestran como indicadores con formato, en lugar de mostrarse como código.
-
-### Flechas y casillas
-
-Puedes dibujar flechas y marcar casillas directamente sobre el tablero:
-
-| Acción | Resultado |
-|---|---|
-| Arrastrar con el botón derecho | Dibuja una flecha. |
-| Clic derecho sobre una casilla | Marca la casilla. |
-| `Shift` | Rojo. |
-| `Alt` | Azul. |
-| `Shift` + `Alt` | Amarillo. |
-| Sin modificadores | Verde. |
-
-Repetir el mismo trazo elimina la anotación. Las flechas y marcas se guardan en el PGN mediante las etiquetas estándar `%cal` y `%csl`, por lo que pueden visualizarse en Lichess, Chess.com y otros programas compatibles.
-
-Las anotaciones incluidas en PGN descargados de estas plataformas también se reconocen automáticamente.
-
-## Preparación de rivales
-
-La preparación de oponentes es una de las funciones centrales de Chess Game Manager. Permite crear una base de datos específica a partir de las partidas de un rival y estudiar su repertorio.
-
-### Paso 1 — Cargar las partidas del rival
-
-Pulsa **Cargar PGN...** y selecciona el archivo que contiene las partidas del oponente.
-
-La importación se realiza en segundo plano, con barra de progreso y opción de cancelación. La base de preparación se guarda en:
-
-```text
-Documentos/ChessStudio/prep/<nombre>.csdb
-```
-
-### Paso 2 — Confirmar el rival y el color
-
-La aplicación identifica al jugador con más partidas y lo propone como rival. Puedes cambiar la selección y decidir qué partidas quieres estudiar:
-
-- Sus partidas con blancas.
-- Sus partidas con negras.
-- Ambos colores.
-
-Las estadísticas se actualizan al cambiar la selección.
-
-### Paso 3 — Explorar su repertorio
-
-Al terminar la importación, puedes abrir el explorador de aperturas. El panel pasa al modo **Solo rival**, que utiliza la base de preparación como fuente principal de estadísticas.
-
-Mueve las piezas en el tablero para explorar el repertorio del oponente. Al hacer doble clic en una jugada del explorador, esta se reproduce en el tablero.
-
-El selector **Ver** permite alternar entre tu propia base, la base del rival o una comparación de ambas.
-
-También puedes abrir una preparación existente, añadir partidas desde la base principal o retirar al rival del explorador cuando termines.
-
-## Explorador de aperturas
-
-El explorador está integrado en el panel derecho y ofrece dos fuentes de datos.
-
-### Base local
-
-Consulta estadísticas de las partidas almacenadas en tus bases de datos. Puedes estudiar tu propio repertorio, el de un rival o comparar ambos.
-
-Cuando hay una preparación activa, el modo **Solo rival** utiliza la base del oponente.
-
-### Lichess
-
-Consulta el explorador online de Lichess:
-
-- Base de Maestros.
-- Base general de Lichess.
-
-Puedes aplicar filtros de ritmo y Elo y descargar partidas destacadas haciendo doble clic sobre ellas.
-
-### Configurar el token de Lichess
-
-El explorador de aperturas de Lichess requiere un token personal gratuito.
-
-1. Pulsa **Crear token** en la pestaña Lichess o visita <https://lichess.org/account/oauth/token>.
-2. Crea un token **sin seleccionar ningún permiso**.
-3. Copia el token y pégalo en el campo correspondiente de la aplicación.
-
-Un token sin permisos adicionales permite consultar datos públicos, pero no autoriza a jugar, modificar la cuenta ni acceder a información privada. Si no configuras un token, el explorador muestra un aviso y el resto de la aplicación sigue funcionando.
-
-El uso de los servicios de Lichess está sujeto a sus [términos de servicio](https://lichess.org/terms-of-service) y a las condiciones aplicables a su API.
-
-## Motores UCI
-
-Chess Game Manager puede comunicarse con motores compatibles con el protocolo UCI, como Stockfish.
-
-**Importante:** Chess Game Manager no incluye, descarga, aloja ni redistribuye Stockfish ni otros motores. El usuario debe obtener el motor por separado, aceptar las condiciones aplicables y seleccionar su ejecutable desde la aplicación.
-
-Para iniciar un análisis:
-
-1. En el panel **Motor**, selecciona el ejecutable UCI mediante el botón `...`.
-2. Pulsa **Iniciar motor**.
-3. El motor comienza a analizar la posición actual del tablero.
-
-Una vez iniciado, el motor permanece activo y sigue automáticamente la posición del tablero mientras navegas por la partida. No es necesario reiniciarlo en cada jugada.
-
-### Opciones de análisis
-
-- **Fijar posición actual:** congela el análisis en la posición seleccionada para estudiarla en profundidad mientras sigues navegando por la partida.
-- **Soltar:** reanuda el seguimiento automático del tablero.
-- **MultiPV:** permite mostrar entre 1 y 5 líneas de análisis simultáneas.
-- **Iniciar automáticamente al abrir:** inicia el motor al arrancar la aplicación, siempre que haya una ruta configurada.
-
-## Seguridad y privacidad
-
-Chess Game Manager incorpora medidas para proteger los datos del usuario y reducir los riesgos asociados a archivos externos.
-
-### Almacenamiento del token de Lichess
-
-Cuando está disponible, la aplicación utiliza la biblioteca opcional `keyring` para guardar el token en el llavero del sistema operativo:
-
-- Windows Credential Locker.
-- macOS Keychain.
-- Secret Service en Linux.
-
-Si no hay un llavero disponible, se utiliza el mecanismo alternativo de almacenamiento local de la aplicación. Las versiones anteriores que guardaban el token en texto plano pueden migrarlo al llavero cuando este está disponible y eliminar la copia anterior.
-
-Además:
-
-- El token se envía mediante HTTPS únicamente a los dominios de Lichess (`lichess.org` y `lichess.ovh`).
-- La aplicación no debe enviar el token a servidores de terceros.
-- El token no se escribe en los registros de la aplicación.
-- Las peticiones no siguen redirecciones HTTP.
-
-Se recomienda crear un token sin permisos adicionales y tratarlo como información confidencial.
-
-### Tratamiento de PGN externos
-
-Los archivos PGN pueden proceder de fuentes no confiables. Para reducir posibles riesgos:
-
-- Los nombres de jugadores, eventos y comentarios se muestran como texto plano, sin interpretarse como HTML.
-- El visor de notación bloquea la carga de recursos externos o locales, como imágenes.
-- Las consultas SQL utilizan parámetros.
-- Los identificadores de partidas de Lichess se validan antes de utilizarlos.
-
-## Atajos de teclado
+- **Windows:** el script crea `dist/ChessStudio/`. Si [Inno Setup 6](https://jrsoftware.org/isinfo.php)
+  está en `PATH`, también genera `dist/installer/ChessStudio-Setup-0.6.0.exe`
+  con asistente de instalación, desinstalador y acceso directo de escritorio
+  opcional. Si no está instalado, el script muestra el comando `ISCC` exacto.
+- **Linux:** distribuye completa la carpeta `dist/ChessStudio/` y registra el
+  archivo `.desktop` indicado arriba.
+
+Antes de publicar el binario, sigue la [lista de verificación de distribución](THIRD_PARTY_NOTICES.md#5-lista-de-verificación-para-una-publicación-pública), especialmente los avisos de Qt/PySide6.
+
+## Primeros pasos
+
+1. Abre ChessStudio: se crea una base local predeterminada en la carpeta de
+   documentos del sistema, `ChessStudio/default.csdb`.
+2. Usa **Importar PGN a la base...** para incorporar una colección o **Abrir
+   PGN...** para estudiar una partida sin importarla.
+3. Haz doble clic en una partida. El tablero, la notación y los paneles de
+   aperturas/motor se sincronizan al navegar.
+4. Guarda los cambios con `Ctrl+S` o exporta una partida PGN independiente.
+
+La ventana se organiza en tres zonas: lista de partidas a la izquierda,
+tablero y notación en el centro, y aperturas, motor y preparación a la derecha.
+Los paneles se muestran desde **Ver** y se pueden reorganizar.
+
+### Navegación y variantes
 
 | Atajo | Acción |
 |---|---|
-| `←` / `→` | Jugada anterior / siguiente |
-| `Inicio` / `Fin` | Ir a la primera / última posición |
-| `Ctrl+S` | Guardar partida en la base |
+| `←` / `→` | Posición anterior / siguiente |
+| `↑` / `↓` | Cambiar opción en el selector de variantes |
+| `→` o `Enter` en el selector | Confirmar la variante seleccionada |
+| `Inicio` / `Fin` | Primera / última posición de la línea principal |
+| `Ctrl+S` | Guardar la partida en la base |
 | `Ctrl+F` | Buscar partidas |
-| `Ctrl+O` | Abrir base de datos |
-| `Ctrl+Shift+O` | Abrir archivo PGN |
-| `Ctrl+N` | Nueva partida |
-| `Supr` | Eliminar partidas seleccionadas |
+| `Ctrl+Shift+O` | Abrir un PGN |
 | `F` | Girar el tablero |
 
-## Estructura del proyecto
+Al llegar a una posición con varias continuaciones, la primera pulsación de
+`→` abre el selector. Elige con `↑`/`↓` y pulsa de nuevo `→` para continuar:
+puedes recorrer una partida sin apartar la mano del teclado.
 
-```text
-chess-game-manager/
-│
-├── main.py                  # Punto de entrada
-│
-├── chessstudio/
-│   ├── main_window.py       # Ventana principal y pestañas
-│   ├── board_widget.py      # Tablero interactivo y anotaciones
-│   ├── piece_renderer.py    # Renderizado SVG y caché
-│   ├── notation_view.py     # Notación, variantes y comentarios
-│   ├── game_model.py        # Modelo de partida y navegación
-│   ├── database.py          # SQLite e índice de posiciones
-│   ├── opening_tree.py      # Explorador local y Lichess
-│   ├── lichess_explorer.py  # Cliente de la API de Lichess
-│   ├── secure_store.py      # Almacenamiento del token
-│   ├── opponent_prep.py     # Preparación de rivales
-│   ├── engine_panel.py      # Integración con motores UCI
-│   ├── game_list.py         # Lista de partidas
-│   ├── search_dialog.py     # Diálogo de búsqueda
-│   ├── pgn_utils.py         # Anotaciones y comentarios PGN
-│   ├── workers.py           # Tareas en segundo plano
-│   └── pieces/              # Piezas SVG y sus avisos de licencia
-│
-├── tests/                   # Pruebas automatizadas
-├── LICENSE                  # Licencia del proyecto
-├── THIRD_PARTY_NOTICES.md   # Avisos y licencias de terceros
-└── requirements.txt         # Dependencias de Python
-```
+### Flechas, marcas y texto de PGN
 
-## Pruebas
+| Acción sobre el tablero | Resultado |
+|---|---|
+| Arrastrar con botón derecho | Flecha verde |
+| Clic derecho | Marca una casilla verde |
+| `Shift` + acción | Rojo |
+| `Alt` + acción | Azul |
+| `Shift` + `Alt` + acción | Amarillo |
 
-Para ejecutar las pruebas automatizadas:
+Las flechas y marcas procedentes de Lichess, Chess.com u otros PGN compatibles
+se reconocen al abrir el archivo. Se vinculan al nodo PGN concreto, por lo que
+las variantes que alcanzan el mismo tablero mantienen anotaciones distintas.
+Las flechas tienen contraste y una opacidad que permite leer tanto la dirección
+como las piezas del tablero.
+
+La notación separa visualmente línea principal, variantes, comentarios,
+evaluaciones y relojes; los códigos técnicos `[%cal]`, `[%csl]`, `[%eval]` y
+`[%clk]` no ensucian el texto de lectura.
+
+## Preparar un rival y analizar
+
+### Preparación de rival
+
+1. Abre **Preparar rival** y pulsa **Cargar PGN...**.
+2. Confirma el jugador detectado y elige partidas con blancas, negras o ambos
+   colores.
+3. Abre el explorador. El modo **Solo rival** utiliza su base como referencia;
+   también puedes comparar ambos repertorios.
+
+Las bases de preparación se guardan en `Documentos/ChessStudio/prep/` (o la
+carpeta equivalente del sistema) y no se suben a ningún servicio.
+
+### Explorador y Lichess
+
+El panel **Aperturas** puede usar estadísticas de las bases locales o el
+explorador de Lichess. Para este último, crea un token personal **sin permisos**
+en <https://lichess.org/account/oauth/token>. Sin token el resto de la
+aplicación funciona normalmente. Consulta los [términos de Lichess](https://lichess.org/terms-of-service).
+
+### Motor UCI
+
+Selecciona en el panel **Motor** el ejecutable de un motor UCI que hayas
+instalado. Puedes mostrar de una a cinco líneas (MultiPV), fijar una posición
+mientras exploras la partida y reanudar después el seguimiento automático.
+
+**Importante:** Stockfish, sus binarios y sus fuentes no están incluidos en
+este repositorio ni en el instalador. Revisa la licencia del motor que decidas
+usar.
+
+## Seguridad y datos
+
+- `keyring` guarda el token de Lichess en Windows Credential Locker, macOS
+  Keychain o Secret Service cuando están disponibles; hay un mecanismo local
+  alternativo para sistemas sin llavero.
+- El token solo se entrega mediante HTTPS a `lichess.org` y `lichess.ovh`; las
+  redirecciones no se siguen automáticamente.
+- Comentarios y cabeceras de PGN se escapan antes de mostrarse. El visor bloquea
+  la carga de recursos externos/locales y las consultas SQLite usan parámetros.
+- No añadas al repositorio bases privadas, PGN personales, tokens, claves o
+  motores UCI.
+
+## Desarrollo
 
 ```bash
-pip install pytest
-QT_QPA_PLATFORM=offscreen python -m pytest tests -q
+python -m pip install -e ".[test]"
+QT_QPA_PLATFORM=offscreen python -m pytest
 ```
 
-## Licencia
+La integración continua ejecuta las pruebas y compila los módulos en Python
+3.10 y 3.11. Consulta [`CONTRIBUTING.md`](CONTRIBUTING.md) para el flujo de
+cambios, y [`SECURITY.md`](SECURITY.md) para informar una vulnerabilidad de
+forma responsable.
 
-Chess Game Manager se distribuye bajo la licencia **GNU General Public License v3.0 o, a elección del usuario, cualquier versión posterior (GPL-3.0-or-later)**. Consulta el archivo [`LICENSE`](LICENSE).
+```text
+Chess-Game-Manager/
+├── chessstudio/              # Aplicación, piezas SVG, icono y punto de entrada
+├── packaging/                # PyInstaller, Inno Setup y acceso directo Linux
+├── scripts/build_release.py  # Construcción del paquete de escritorio
+├── tests/                    # Pruebas automatizadas
+├── LICENSE                   # GPL-3.0-or-later
+├── NOTICE                    # Copyright, garantía y atribuciones resumidas
+├── THIRD_PARTY_NOTICES.md    # Inventario y lista de publicación
+└── pyproject.toml            # Metadatos, dependencias y comando chessstudio
+```
 
-El proyecto utiliza `python-chess`, que se distribuye bajo GPL-3.0-or-later. Los componentes, bibliotecas y recursos de terceros conservan sus respectivas licencias y avisos de autoría. Consulta [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+## Licencia y atribuciones
 
-**Los motores UCI, incluido Stockfish, no forman parte de este repositorio ni se distribuyen con la aplicación.** Cada usuario los obtiene y configura por separado. Sus licencias corresponden a sus respectivos proyectos.
+ChessStudio se distribuye bajo **GNU GPL v3.0 o posterior**
+([`LICENSE`](LICENSE)). El código propio se acompaña de [`NOTICE`](NOTICE).
+Las piezas cburnett son obra de Colin M. L. Burnett y se redistribuyen bajo
+GPL-2.0-or-later con sus avisos intactos. `python-chess`, Qt/PySide6, `keyring`
+y las herramientas de empaquetado conservan sus propias condiciones.
 
-La información de licencias de este repositorio se ofrece para identificar los componentes conocidos y sus avisos. No sustituye una revisión de las versiones y licencias efectivamente incluidas en cada publicación.
+Revisa [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) antes de redistribuir,
+en especial si publicas un instalador. La información es una guía de
+cumplimiento, no asesoramiento jurídico.
 
-## Contribuciones
+## Contribuir
 
-Las sugerencias, informes de errores y contribuciones son bienvenidos.
-
-Antes de enviar cambios:
-
-- Comprueba que las pruebas existentes siguen pasando.
-- No incluyas bases de datos personales, PGN privados, tokens ni otras credenciales.
-- Conserva los avisos de copyright y las licencias de los componentes de terceros.
-- Documenta las nuevas dependencias y recursos en `THIRD_PARTY_NOTICES.md`.
-- No añadas motores UCI ni otros binarios de terceros sin revisar previamente sus licencias y obligaciones de redistribución.
-
-
+Las mejoras y los informes de errores son bienvenidos. Antes de abrir una
+propuesta, ejecuta las pruebas, documenta cualquier dependencia o recurso nuevo
+en los avisos de terceros y no incluyas información personal o binarios de
+motores. Al contribuir, aceptas licenciar tu aportación bajo GPL-3.0-or-later.

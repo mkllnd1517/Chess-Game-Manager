@@ -23,13 +23,15 @@ from PySide6.QtWidgets import QInputDialog, QMenu, QTextBrowser, QTextEdit, QWid
 from chessstudio.game_model import NAG_SYMBOLS
 from chessstudio.pgn_utils import parse_comment
 
-VARIATION_STYLE = "color:#9c1c1c;"
-COMMENT_STYLE = "color:#2e7d32; font-style:italic;"
-COMMENT_BOX_STYLE = "background-color:#eef6ee;"
-EVAL_STYLE = "color:#1565c0; font-weight:bold; font-style:normal;"
-CLK_STYLE = "color:#8a8a8a; font-style:normal;"
-CURRENT_BG = "#ffeba8"
-NAG_STYLE = "color:#b45309; font-weight:bold;"
+# Estilos sobrios y con contraste suficiente para leer notación larga sin
+# confundir la línea principal, las variantes y los comentarios de un PGN.
+VARIATION_STYLE = "color:#8f2430; background-color:#fff6f6;"
+COMMENT_STYLE = "color:#216e39; font-style:italic;"
+COMMENT_BOX_STYLE = "background-color:#edf7ef; border:1px solid #cfe7d4; border-radius:4px;"
+EVAL_STYLE = "color:#155eaa; font-weight:bold; font-style:normal;"
+CLK_STYLE = "color:#68707a; font-style:normal;"
+CURRENT_BG = "#ffe6a3"
+NAG_STYLE = "color:#a84e06; font-weight:bold;"
 TRUNC_STYLE = "color:#888; font-style:italic;"
 
 MOVE_NAG_MENU = [1, 2, 3, 4, 5, 6, 7]
@@ -101,7 +103,10 @@ class NotationView(QTextBrowser):
                 f'<a href="{SHOW_ALL_ANCHOR}">Mostrar toda la partida</a></span>'
             )
         joined = " ".join(blocks)
-        self.setHtml(f'<div style="font-family:\'Segoe UI\'; font-size:10.5pt;">{joined}</div>')
+        self.setHtml(
+            f'<div style="font-family:\'Segoe UI\', \"Noto Sans\", sans-serif; '
+            f'font-size:10.5pt; line-height:1.55; margin:7px;">{joined}</div>'
+        )
         self._build_anchor_map()
         self._highlight_current()
 

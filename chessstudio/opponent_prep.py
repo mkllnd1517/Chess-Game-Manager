@@ -35,12 +35,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from chessstudio.app_paths import preparation_directory
 from chessstudio.database import ChessDatabase, parse_stored_game
 from chessstudio.game_list import GameListWidget
 from chessstudio.game_model import GameDoc
 from chessstudio.workers import PgnImportWorker, run_in_thread
 
-PREP_DIR = Path.home() / "Documents" / "ChessStudio" / "prep"
+# QStandardPaths resuelve correctamente «Documentos» en Windows, macOS y
+# escritorios Linux localizados; se conserva el nombre público por
+# compatibilidad con el resto del módulo.
+PREP_DIR = preparation_directory()
 COLOR_MAP = {"Ambos colores": "both", "Con blancas": "white", "Con negras": "black"}
 
 
