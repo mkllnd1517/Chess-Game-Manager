@@ -33,14 +33,25 @@ jobs:
       - name: Ejecutar pruebas de interfaz sin pantalla
         env:
           QT_QPA_PLATFORM: offscreen
-        run: python -m pytest --junitxml=pytest.xml
+        run: |
+          set -o pipefail
+          python -m pytest --junitxml=pytest.xml 2>&1 | tee pytest-output.txt
       - name: Publicar diagnóstico si fallan las pruebas
         if: failure()
         run: |
           echo "## Diagnóstico de pytest" >> "$GITHUB_STEP_SUMMARY"
-          echo '```xml' >> "$GITHUB_STEP_SUMMARY"
-          sed -n '1,500p' pytest.xml >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          for report in pytest-output.txt pytest.xml; do
+            if [ -f "$report" ]; then
+              echo "### $report" >> "$GITHUB_STEP_SUMMARY"
+              echo '```text' >> "$GITHUB_STEP_SUMMARY"
+              sed -n '1,500p' "$report" >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          # Deja las últimas líneas también como anotación visible desde la
+          # lista de comprobaciones, incluso si Qt termina el proceso de golpe.
+          message=$(tail -n 80 pytest-output.txt | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')
+          echo "::error title=Salida de pytest::$message"
 
   package:
     name: Validar paquete de escritorio
