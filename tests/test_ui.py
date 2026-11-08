@@ -212,6 +212,7 @@ def test_engine_multipv(qapp, tmp_path):
     worker.start(str(script), chess.Board(), 3)
     ok = wait_for(qapp, lambda: any(len(lines) >= 3 for lines in received), timeout=15)
     worker.stop()
+    assert not worker.is_running(), "El worker UCI debe cerrar su hilo al detenerse"
     assert ok, f"MultiPV no produjo 3 líneas: {received[-3:] if received else 'nada'}"
     best = max(received, key=len)
     assert [line["rank"] for line in best] == [1, 2, 3]
