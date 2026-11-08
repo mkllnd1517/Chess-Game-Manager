@@ -33,7 +33,14 @@ jobs:
       - name: Ejecutar pruebas de interfaz sin pantalla
         env:
           QT_QPA_PLATFORM: offscreen
-        run: python -m pytest
+        run: python -m pytest --junitxml=pytest.xml
+      - name: Publicar diagnóstico si fallan las pruebas
+        if: failure()
+        run: |
+          echo "## Diagnóstico de pytest" >> "$GITHUB_STEP_SUMMARY"
+          echo '```xml' >> "$GITHUB_STEP_SUMMARY"
+          sed -n '1,500p' pytest.xml >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
   package:
     name: Validar paquete de escritorio
