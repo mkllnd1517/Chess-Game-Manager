@@ -35,7 +35,9 @@ classifiers = [
 dependencies = [
   # Widgets, Network y SVG pertenecen a Essentials. Evitamos el meta-paquete
   # PySide6, WebEngine, PDF y otros módulos que ChessStudio no utiliza.
-  "PySide6-Essentials>=6.5,<7",
+  # 6.5–6.9 es la familia validada en CI; se evita incorporar cambios ABI de
+  # Qt posteriores sin ejecutar antes la batería gráfica completa.
+  "PySide6-Essentials>=6.5,<6.10",
   "chess>=1.10",
   "keyring>=24.0",
 ]

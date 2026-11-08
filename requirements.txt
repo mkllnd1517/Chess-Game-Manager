@@ -4,7 +4,8 @@
 # ChessStudio solo usa QtCore, QtGui, QtWidgets, QtNetwork y QtSvg, todos en
 # PySide6-Essentials. Se evita el meta-paquete PySide6: descargaría WebEngine,
 # PDF y otros módulos que no forman parte de la aplicación.
-PySide6-Essentials>=6.5,<7
+# La familia 6.5–6.9 se valida en CI antes de publicar instaladores.
+PySide6-Essentials>=6.5,<6.10
 chess>=1.10
 # Recomendado: guarda el token de Lichess en el llavero del sistema. Si no hay
 # un llavero disponible, la app usa un fallback local controlado por el usuario.
