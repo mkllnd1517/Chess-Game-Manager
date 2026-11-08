@@ -1,6 +1,12 @@
-PySide6>=6.5
-chess>=1.10
-# Opcional pero recomendado: guarda el token de Lichess en el llavero del
-# sistema (Windows Credential Locker / macOS Keychain / Secret Service).
-# Si no está instalado, la app funciona igual y usa un fallback local.
-keyring>=24.0
+# Dependencias necesarias para ejecutar Chess Game Manager desde el código.
+#
+# Se utiliza el paquete Essentials de Qt for Python: incluye QtCore, QtGui,
+# QtWidgets, QtNetwork y QtSvg, que son los únicos módulos Qt importados por
+# la aplicación. Evita descargar WebEngine, PDF y otros módulos no usados.
+# El límite superior mantiene la instalación dentro de la familia Qt validada
+# por el proyecto; actualiza el rango tras probar una nueva versión mayor.
+PySide6-Essentials>=6.5,<6.10
+
+# python-chess proporciona el análisis de PGN, reglas y comunicación UCI.
+# <2 evita cambios incompatibles de una futura versión mayor.
+chess>=1.10,<2

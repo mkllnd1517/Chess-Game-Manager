@@ -11,14 +11,16 @@ Las dependencias indicadas a continuación se instalan mediante `pip`; no se afi
 | Componente | Licencia publicada | Uso en Chess Game Manager | Referencia |
 |---|---|---|---|
 | `python-chess` (`chess`) | GPL-3.0-or-later | Reglas de ajedrez, lectura y escritura PGN, comunicación UCI y funciones relacionadas. | [Repositorio oficial](https://github.com/niklasf/python-chess) |
-| PySide6 / Qt for Python | LGPLv3 y/o GPL, según el componente y las condiciones aplicables; también existe licencia comercial | Interfaz gráfica de escritorio. | [Licencias de Qt](https://doc.qt.io/qt-6/licensing.html) · [Qt for Python](https://wiki.qt.io/Qt_for_Python) |
-| `keyring` | MIT | Acceso al llavero del sistema para almacenar el token de Lichess. Dependencia opcional. | [Repositorio oficial](https://github.com/jaraco/keyring) |
+| `PySide6-Essentials` / Qt for Python | LGPLv3 y/o GPL, según el componente y las condiciones aplicables; también existe licencia comercial | Interfaz gráfica: Core, Gui, Widgets, Network y SVG. | [Licencias de Qt](https://doc.qt.io/qt-6/licensing.html) · [Qt for Python](https://wiki.qt.io/Qt_for_Python) |
+| `keyring` | MIT | Acceso opcional al llavero del sistema para almacenar el token de Lichess. | [Repositorio oficial](https://github.com/jaraco/keyring) |
+| `pytest` | MIT | Ejecución de pruebas; solo se instala desde `requirements-dev.txt`. | [Repositorio oficial](https://github.com/pytest-dev/pytest) |
 
 ### Notas sobre las dependencias
 
 - **python-chess:** el proyecto publica su código bajo GPL-3.0-or-later. Su uso es un motivo relevante para que Chess Game Manager se distribuya bajo GPL-3.0-or-later. Consulta siempre la licencia de la versión concreta instalada.
-- **PySide6 / Qt for Python:** Qt ofrece distintas modalidades de licencia, incluidas LGPL y GPL, además de licencias comerciales. La licencia y las obligaciones aplicables dependen de los módulos y componentes concretos utilizados y de cómo se distribuyan. No debe asumirse que la mera instalación mediante `pip` o el enlace dinámico resuelve por sí solo todas las obligaciones. Antes de empaquetar o redistribuir la aplicación, revisa los avisos y archivos de licencia de la versión concreta de PySide6/Qt y los requisitos de la licencia elegida.
-- **keyring:** se publica bajo licencia MIT. Si se redistribuye código o archivos de licencia de esta biblioteca, deben conservarse los avisos de copyright y el texto de licencia exigidos por sus condiciones.
+- **PySide6-Essentials / Qt for Python:** el proyecto instala el subconjunto Essentials porque contiene los módulos que usa ChessStudio y evita descargar módulos no utilizados como WebEngine o PDF. Qt ofrece distintas modalidades de licencia, incluidas LGPL y GPL, además de licencias comerciales. La licencia y las obligaciones aplicables dependen de los módulos y componentes concretos utilizados y de cómo se distribuyan. No debe asumirse que la mera instalación mediante `pip` o el enlace dinámico resuelve por sí solo todas las obligaciones. Antes de empaquetar o redistribuir la aplicación, revisa los avisos y archivos de licencia de la versión concreta de PySide6/Qt y los requisitos de la licencia elegida.
+- **keyring:** se publica bajo licencia MIT y solo se instala desde `requirements-optional.txt`. Si se redistribuye código o archivos de licencia de esta biblioteca, deben conservarse los avisos de copyright y el texto de licencia exigidos por sus condiciones.
+- **pytest:** se publica bajo licencia MIT y es una dependencia de desarrollo, no necesaria para ejecutar ChessStudio.
 
 Este inventario no debe considerarse exhaustivo hasta contrastarlo con todas las dependencias directas y transitivas declaradas en `requirements.txt` y con el código real del proyecto.
 

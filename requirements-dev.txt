@@ -1,0 +1,4 @@
+# Entorno para desarrollo y pruebas.
+-r requirements.txt
+-r requirements-optional.txt
+pytest>=7,<10
