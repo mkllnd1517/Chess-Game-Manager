@@ -7,7 +7,7 @@ from pathlib import Path
 
 import chess
 import chess.pgn
-from PySide6.QtCore import QSettings, Qt, QTimer, Signal
+from PySide6.QtCore import QEvent, QSettings, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QComboBox,
@@ -28,12 +28,15 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSplitter,
     QStyle,
+    QTextBrowser,
     QTabWidget,
     QToolBar,
     QVBoxLayout,
     QWidget,
 )
 
+from chessstudio import __version__
+from chessstudio.app_paths import app_documents_directory, legal_document_path
 from chessstudio.board_widget import BoardWidget
 from chessstudio.database import (
     DEFAULT_HEADERS,
@@ -90,6 +93,63 @@ class GamePropertiesDialog(QDialog):
         return data
 
 
+class LegalNoticesDialog(QDialog):
+    """Muestra los avisos exigidos por la GPL sin ocultarlos en el repositorio."""
+
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.setWindowTitle("Licencia y avisos de terceros")
+        self.resize(780, 560)
+
+        summary = QTextBrowser()
+        summary.setOpenExternalLinks(True)
+        summary.setHtml(
+            "<h2>ChessStudio — Chess Game Manager</h2>"
+            f"<p>Versión <b>{__version__}</b></p>"
+            "<p>Copyright © 2026 Chess Game Manager contributors.</p>"
+            "<p>Este programa es software libre: puedes redistribuirlo o "
+            "modificarlo conforme a la <b>GNU General Public License v3 o "
+            "posterior (GPL-3.0-or-later)</b>.</p>"
+            "<p>Se distribuye con la esperanza de que resulte útil, pero "
+            "<b>SIN NINGUNA GARANTÍA</b>; ni siquiera la garantía implícita de "
+            "COMERCIABILIDAD o IDONEIDAD PARA UN FIN PARTICULAR.</p>"
+            "<p>Las piezas de ajedrez cburnett, Qt/PySide6, python-chess y "
+            "otros componentes conservan sus propias licencias y avisos. "
+            "Consulta las pestañas siguientes antes de redistribuir una "
+            "compilación.</p>"
+        )
+
+        tabs = QTabWidget()
+        tabs.addTab(summary, "Resumen")
+        tabs.addTab(self._document_view("LICENSE"), "GPL-3.0-or-later")
+        tabs.addTab(self._document_view("THIRD_PARTY_NOTICES.md"), "Terceros")
+
+        close = QDialogButtonBox(QDialogButtonBox.Close)
+        close.rejected.connect(self.reject)
+        close.accepted.connect(self.accept)
+        layout = QVBoxLayout(self)
+        layout.addWidget(tabs)
+        layout.addWidget(close)
+
+    @staticmethod
+    def _document_view(filename: str) -> QTextBrowser:
+        viewer = QTextBrowser()
+        viewer.setOpenExternalLinks(True)
+        path = legal_document_path(filename)
+        try:
+            if path is None:
+                raise OSError("documento no incluido")
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            text = (
+                f"No se encontró el archivo {filename} junto a esta instalación.\n\n"
+                "Consulta la copia completa en el repositorio oficial del proyecto "
+                "antes de redistribuir esta aplicación."
+            )
+        viewer.setPlainText(text)
+        return viewer
+
+
 class VariationChooserDialog(QDialog):
     def __init__(self, entries: list[tuple[int, str]], parent: QWidget | None = None):
         super().__init__(parent)
@@ -97,16 +157,20 @@ class VariationChooserDialog(QDialog):
         self.setMinimumWidth(360)
         self._ids = [node_id for node_id, _ in entries]
         label = QLabel("Esta posición tiene varias continuaciones.\n"
-                       "Usa las flechas \u2191 \u2193 para elegir y pulsa Enter:")
+                       "Usa las flechas \u2191 \u2193 para elegir y pulsa \u2192 (o Enter) para continuar:")
         label.setWordWrap(True)
         self.list_widget = QListWidget()
+        self.list_widget.installEventFilter(self)
         for _, text in entries:
             self.list_widget.addItem(QListWidgetItem(text))
         if self.list_widget.count():
             self.list_widget.setCurrentRow(0)
+        self.list_widget.setFocus()
         self.list_widget.itemDoubleClicked.connect(lambda _item: self.accept())
-        for key in (Qt.Key_Return, Qt.Key_Enter):
-            QShortcut(QKeySequence(key), self.list_widget, activated=self.accept)
+        for key in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Right):
+            shortcut = QShortcut(QKeySequence(key), self)
+            shortcut.setContext(Qt.WidgetWithChildrenShortcut)
+            shortcut.activated.connect(self.accept)
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -120,6 +184,22 @@ class VariationChooserDialog(QDialog):
         if 0 <= row < len(self._ids):
             return self._ids[row]
         return None
+
+    def eventFilter(self, watched, event) -> bool:
+        # El foco suele estar en la lista; interceptar ahí garantiza que una
+        # segunda pulsación de → confirma la opción, no solo la primera que
+        # abrió este selector desde la partida.
+        if watched is self.list_widget and event.type() == QEvent.KeyPress \
+                and event.key() == Qt.Key_Right:
+            self.accept()
+            return True
+        return super().eventFilter(watched, event)
+
+    def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key_Right:
+            self.accept()
+            return
+        super().keyPressEvent(event)
 
 
 class GameWindow(QWidget):
@@ -137,6 +217,11 @@ class GameWindow(QWidget):
 
         self.header_label = QLabel()
         self.header_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.header_label.setWordWrap(True)
+        self.header_label.setStyleSheet(
+            "QLabel { color: #3f4752; background: #f4f7fb; border: 1px solid #dbe3ee; "
+            "border-radius: 5px; padding: 6px 8px; }"
+        )
         # Texto plano: los nombres del PGN no son confiables y no deben
         # interpretarse como HTML (evita inyección y cargas de recursos externos).
         self.header_label.setTextFormat(Qt.PlainText)
@@ -218,7 +303,15 @@ class GameWindow(QWidget):
         if not entries:
             return
         dialog = VariationChooserDialog(entries, self)
-        if dialog.exec() == QDialog.Accepted:
+        # El atajo global → también alcanza widgets hijos. Mientras el diálogo
+        # modal está visible lo desactivamos para que la segunda flecha la
+        # procese inequívocamente el selector, no abra otro selector.
+        self._right_shortcut.setEnabled(False)
+        try:
+            accepted = dialog.exec() == QDialog.Accepted
+        finally:
+            self._right_shortcut.setEnabled(True)
+        if accepted:
             node_id = dialog.selected_id()
             if node_id is not None:
                 node = self.doc.find_node(node_id)
@@ -226,8 +319,9 @@ class GameWindow(QWidget):
                     self.doc.go_to(node)
 
     def _build_shortcuts(self) -> None:
-        QShortcut(QKeySequence(Qt.Key_Right), self, activated=self._goto_next,
-                  context=Qt.WidgetWithChildrenShortcut)
+        self._right_shortcut = QShortcut(QKeySequence(Qt.Key_Right), self,
+                                         activated=self._goto_next,
+                                         context=Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.Key_Left), self, activated=self.doc.goto_previous,
                   context=Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.Key_Home), self, activated=self.doc.goto_start,
@@ -315,7 +409,7 @@ class MainWindow(QMainWindow):
         if last and Path(last).exists():
             default_path = Path(last)
         else:
-            default_path = Path.home() / "Documents" / "ChessStudio" / "default.csdb"
+            default_path = app_documents_directory() / "default.csdb"
         self.open_database(default_path, quiet=True)
 
         # Arrancar el motor automáticamente (si está configurado) una vez que
@@ -403,6 +497,11 @@ class MainWindow(QMainWindow):
         self.act_close.setShortcut(QKeySequence.Quit)
         self.act_close.triggered.connect(self.close)
 
+        self.act_legal = QAction("Licencia y avisos de terceros...", self)
+        self.act_legal.triggered.connect(self.show_legal_notices)
+        self.act_about = QAction("Acerca de ChessStudio", self)
+        self.act_about.triggered.connect(self.show_about)
+
         toolbar = QToolBar("Principal")
         toolbar.setMovable(False)
         self.addToolBar(toolbar)
@@ -444,6 +543,25 @@ class MainWindow(QMainWindow):
         del_shortcut = QShortcut(QKeySequence.Delete, self.game_list)
         del_shortcut.setContext(Qt.WidgetShortcut)
         del_shortcut.activated.connect(self.delete_selected_games)
+
+        menu_help = self.menuBar().addMenu("Ayuda")
+        menu_help.addAction(self.act_legal)
+        menu_help.addSeparator()
+        menu_help.addAction(self.act_about)
+
+    def show_legal_notices(self) -> None:
+        LegalNoticesDialog(self).exec()
+
+    def show_about(self) -> None:
+        QMessageBox.about(
+            self,
+            "Acerca de ChessStudio",
+            f"<h2>ChessStudio</h2><p>Chess Game Manager · versión {__version__}</p>"
+            "<p>Organiza, estudia y analiza tus partidas de ajedrez.</p>"
+            "<p>Software libre bajo GPL-3.0-or-later. Consulta Ayuda → "
+            "Licencia y avisos de terceros para el texto completo y la "
+            "información de componentes.</p>",
+        )
 
     def _game_list_menu(self, pos) -> None:
         index = self.game_list.indexAt(pos)

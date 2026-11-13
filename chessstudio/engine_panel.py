@@ -66,6 +66,11 @@ class EngineWorker(QObject):
         super().__init__()
         self._thread: threading.Thread | None = None
         self._lock = threading.Lock()
+        # SimpleEngine mantiene su propio bucle asyncio. Guardar una referencia
+        # permite cerrarlo desde stop() y esperar el hilo antes de que Qt/Python
+        # empiecen su finalización (evita procesos UCI huérfanos).
+        self._engine_lock = threading.Lock()
+        self._engine: chess.engine.SimpleEngine | None = None
         self._stop = threading.Event()
         self._board = chess.Board()
         self._generation = 0
@@ -74,6 +79,9 @@ class EngineWorker(QObject):
 
     def start(self, engine_path: str, board: chess.Board, multipv: int) -> None:
         self.stop()
+        if self._thread is not None and self._thread.is_alive():
+            self.failed.emit(self._run_id, "El motor anterior todavía se está cerrando.")
+            return
         self._stop.clear()
         self._run_id += 1
         run_id = self._run_id
@@ -95,11 +103,25 @@ class EngineWorker(QObject):
             self._generation += 1
 
     def stop(self) -> None:
+        """Detiene el análisis y cierra el transporte UCI de forma determinista."""
         self._stop.set()
+        # close() es seguro entre hilos en python-chess: programa el cierre en
+        # su propio event loop y desbloquea inmediatamente analysis().
+        with self._engine_lock:
+            engine = self._engine
+        if engine is not None:
+            try:
+                engine.close()
+            except Exception:
+                pass
         thread = self._thread
         if thread is not None and thread.is_alive():
-            thread.join(timeout=1.5)
-        self._thread = None
+            thread.join(timeout=5.0)
+        # Nunca se reutiliza el evento de parada hasta que el hilo actual ha
+        # terminado. Así un arranque nuevo no puede reanimar una ejecución UCI
+        # anterior que estuviera saliendo.
+        if thread is None or not thread.is_alive():
+            self._thread = None
 
     def is_running(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
@@ -109,6 +131,11 @@ class EngineWorker(QObject):
         engine = None
         try:
             engine = chess.engine.SimpleEngine.popen_uci(engine_path, timeout=10)
+            with self._engine_lock:
+                self._engine = engine
+            if self._stop.is_set():
+                engine.close()
+                return
             self.engineInfo.emit(f"Motor activo: {engine.id.get('name', engine_path)}")
             while not self._stop.is_set():
                 with self._lock:
@@ -146,7 +173,10 @@ class EngineWorker(QObject):
                     if lines_by_rank:
                         self._emit_lines(board, lines_by_rank)
                 except chess.engine.EngineTerminatedError:
-                    self.failed.emit(run_id, "El motor terminó inesperadamente.")
+                    # Un close() solicitado por stop() es una salida normal,
+                    # no un fallo que deba dejar señales/futuros pendientes.
+                    if not self._stop.is_set():
+                        self.failed.emit(run_id, "El motor terminó inesperadamente.")
                     break
                 except Exception as exc:
                     self.failed.emit(run_id, f"Error de análisis: {exc}")
@@ -158,9 +188,17 @@ class EngineWorker(QObject):
             self.failed.emit(run_id, f"No se pudo iniciar el motor: {exc}")
         finally:
             if engine is not None:
+                with self._engine_lock:
+                    if self._engine is engine:
+                        self._engine = None
                 try:
-                    engine.quit()
+                    if self._stop.is_set():
+                        engine.close()
+                    else:
+                        engine.quit()
                 except Exception:
+                    # El transporte puede haber sido cerrado desde stop(). En
+                    # ese caso no queda nada que esperar en el event loop UCI.
                     pass
 
     def _emit_lines(self, board: chess.Board, lines_by_rank: dict[int, dict]) -> None:

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Original ChessStudio application icon, 2026 Chess Game Manager contributors. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">ChessStudio</title>
+  <desc id="desc">A white chess knight on a dark blue rounded square with a gold accent.</desc>
+  <defs>
+    <linearGradient id="board" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#21365f"/>
+      <stop offset="1" stop-color="#101c38"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8d77d"/>
+      <stop offset="1" stop-color="#c69434"/>
+    </linearGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="48" fill="url(#board)"/>
+  <path d="M40 40h44v44H40zm88 0h44v44h-44zm44 44h44v44h-44zM84 84h44v44H84zm88 0h44v44h-44zM40 128h44v44H40zm88 0h44v44h-44zm88 0h44v44h-44zM84 172h44v44H84zm88 0h44v44h-44z" fill="#ffffff" opacity=".07"/>
+  <path d="M83 196h95c7 0 13 6 13 13v5H65v-5c0-7 6-13 18-13z" fill="url(#gold)"/>
+  <path d="M91 190c4-28 14-48 30-61-19-7-29-24-30-49 14-2 29 0 43 7 15 8 25 20 29 36l-17 11c-4-12-12-20-24-24 2 13 11 23 28 30 8 3 12 12 9 20-6 14-8 24-6 30H91z" fill="#f9fafc"/>
+  <path d="M97 190c5-28 16-47 33-58-4 15-3 32 4 50l3 8H97z" fill="#dbe4f0"/>
+  <circle cx="124" cy="85" r="5" fill="#21365f"/>
+  <path d="M76 214h112" stroke="#fff4d5" stroke-width="5" stroke-linecap="round" opacity=".78"/>
+</svg>

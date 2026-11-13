@@ -31,7 +31,12 @@ FRAME_EDGE = QColor("#2a1a12")
 COORD_LIGHT = QColor(90, 55, 30, 220)
 COORD_DARK = QColor(245, 225, 200, 220)
 # Orden: rojo, verde, azul, amarillo (índices usados en %cal)
-ARROW_COLORS = [QColor("#c62828"), QColor("#2e9e44"), QColor("#2f6fd0"), QColor("#e0a020")]
+# Opacidad alta, pero no total: las flechas se distinguen con claridad sin
+# ocultar las piezas que atraviesan (especialmente en PGN con muchas marcas).
+ARROW_COLORS = [
+    QColor(198, 40, 40, 214), QColor(46, 158, 68, 214),
+    QColor(47, 111, 208, 214), QColor(224, 160, 32, 222),
+]
 # Orden: naranja, verde, rojo, azul (índices usados en %csl)
 MARK_COLORS = [QColor(235, 160, 40, 110), QColor(60, 175, 80, 110), QColor(215, 60, 60, 110), QColor(70, 120, 220, 110)]
 
@@ -267,19 +272,34 @@ class BoardWidget(QWidget):
             return
         ux, uy = dx / dist, dy / dist
         px, py = -uy, ux
-        thickness = max(4.0, size * 0.16)
-        head_len = thickness * 2.4
-        head_half = thickness * 1.25
+        # Un trazo algo más ancho y un borde muy discreto hacen legibles las
+        # flechas importadas tanto en tableros pequeños como sobre piezas.
+        thickness = max(5.0, size * 0.16)
+        head_len = thickness * 2.45
+        head_half = thickness * 1.28
         base = QPointF(b.x() - ux * head_len, b.y() - uy * head_len)
         tip = QPointF(b.x() - ux * thickness * 0.15, b.y() - uy * thickness * 0.15)
         left = QPointF(base.x() + px * head_half, base.y() + py * head_half)
         right = QPointF(base.x() - px * head_half, base.y() - py * head_half)
+        outline = QColor(25, 25, 25, min(72, color.alpha() // 3))
         painter.save()
+        start = QPointF(a.x() + ux * thickness * 0.4, a.y() + uy * thickness * 0.4)
+        painter.setPen(QPen(outline, thickness + 2.0, Qt.SolidLine, Qt.RoundCap))
+        painter.drawLine(start, base)
         painter.setPen(QPen(color, thickness, Qt.SolidLine, Qt.RoundCap))
-        painter.drawLine(QPointF(a.x() + ux * thickness * 0.4, a.y() + uy * thickness * 0.4), base)
+        painter.drawLine(start, base)
         painter.setPen(Qt.NoPen)
-        painter.setBrush(color)
+        painter.setBrush(outline)
         painter.drawPolygon(QPolygonF([tip, left, right]))
+        # Cabeza ligeramente más pequeña encima del borde, para que siga
+        # siendo nítida incluso con colores similares a la casilla.
+        inner_base = QPointF(b.x() - ux * (head_len - 1.4), b.y() - uy * (head_len - 1.4))
+        inner_left = QPointF(inner_base.x() + px * max(2.0, head_half - 1.1),
+                             inner_base.y() + py * max(2.0, head_half - 1.1))
+        inner_right = QPointF(inner_base.x() - px * max(2.0, head_half - 1.1),
+                              inner_base.y() - py * max(2.0, head_half - 1.1))
+        painter.setBrush(color)
+        painter.drawPolygon(QPolygonF([tip, inner_left, inner_right]))
         painter.drawEllipse(a, thickness * 0.45, thickness * 0.45)
         painter.restore()
 

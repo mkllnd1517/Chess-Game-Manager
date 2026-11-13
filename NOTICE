@@ -1,0 +1,21 @@
+ChessStudio — Chess Game Manager
+Copyright (C) 2026 Chess Game Manager contributors
+
+SPDX-License-Identifier: GPL-3.0-or-later
+
+ChessStudio is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+ChessStudio is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+This distribution includes third-party material. Its copyright, attribution
+and licence notices are retained in THIRD_PARTY_NOTICES.md and in
+chessstudio/pieces/LICENSE.txt. In particular, the cburnett chess-piece set
+is copyright Colin M. L. Burnett and is redistributed under GPL-2.0-or-later.
+
+The project does not include Stockfish or any other UCI engine. Users obtain
+and configure engines independently and must respect their respective terms.
