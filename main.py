@@ -1,23 +1,9 @@
-import sys
+"""Lanzador de compatibilidad para ejecutar desde un clon del repositorio.
 
-from PySide6.QtWidgets import QApplication
-
-from chessstudio import APP_NAME, __version__
-from chessstudio.main_window import MainWindow
-
-
-def main() -> int:
-    # Partidas muy largas con variantes profundas pueden superar el límite
-    # de recursión por defecto al renderizar/exportar el árbol.
-    sys.setrecursionlimit(10000)
-    app = QApplication(sys.argv)
-    app.setApplicationName(APP_NAME)
-    app.setApplicationVersion(__version__)
-    app.setOrganizationName(APP_NAME)
-    app.setStyle("Fusion")
-    window = MainWindow()
-    window.show()
-    return app.exec()
+Las instalaciones normales usan el comando ``chessstudio`` o el acceso directo
+creado por el instalador; no es necesario abrir ni ejecutar este archivo.
+"""
+from chessstudio.app import main
 
 
 if __name__ == "__main__":

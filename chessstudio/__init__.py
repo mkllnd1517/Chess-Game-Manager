@@ -1,2 +1,4 @@
-__version__ = "0.5.0"
+"""Metadatos públicos de ChessStudio."""
+
+__version__ = "0.6.0"
 APP_NAME = "ChessStudio"
