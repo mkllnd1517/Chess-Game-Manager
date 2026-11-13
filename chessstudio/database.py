@@ -41,12 +41,28 @@ CREATE TABLE IF NOT EXISTS pos_index (
     next_san TEXT NOT NULL DEFAULT '',
     result TEXT NOT NULL DEFAULT '*'
 );
+-- Las fuentes permiten que un repertorio retire todas las partidas que
+-- llegaron en un PGN concreto sin tocar los demás archivos importados.
+CREATE TABLE IF NOT EXISTS pgn_sources (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    label TEXT NOT NULL,
+    imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS pgn_source_games (
+    source_id INTEGER NOT NULL REFERENCES pgn_sources(id) ON DELETE CASCADE,
+    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    PRIMARY KEY (source_id, game_id)
+);
 CREATE INDEX IF NOT EXISTS idx_games_white ON games(white);
 CREATE INDEX IF NOT EXISTS idx_games_black ON games(black);
 CREATE INDEX IF NOT EXISTS idx_games_event ON games(event);
 CREATE INDEX IF NOT EXISTS idx_games_date ON games(date);
 CREATE INDEX IF NOT EXISTS idx_games_eco ON games(eco);
 CREATE INDEX IF NOT EXISTS idx_pos_poskey ON pos_index(poskey);
+-- Cubre la consulta más frecuente del explorador: posición + siguiente
+-- movimiento, sin obligar a SQLite a recorrer todas las partidas de la base.
+CREATE INDEX IF NOT EXISTS idx_pos_lookup ON pos_index(poskey, next_san, result, game_id);
+CREATE INDEX IF NOT EXISTS idx_pgn_source_games_source ON pgn_source_games(source_id, game_id);
 """
 
 DEFAULT_HEADERS = ["Event", "Site", "Date", "Round", "White", "Black", "Result", "ECO"]
@@ -119,6 +135,21 @@ class GameRow:
     eco: str
     movetext: str = field(default="", repr=False)
     headers: dict = field(default_factory=dict, repr=False)
+
+
+@dataclass(frozen=True)
+class PgnSource:
+    """Un archivo PGN importado en una colección administrada.
+
+    Se guarda únicamente una etiqueta legible —normalmente el nombre del
+    archivo—, no su ruta absoluta. Así la colección sigue siendo portable y no
+    revela innecesariamente rutas locales en sus metadatos.
+    """
+
+    id: int
+    label: str
+    game_count: int
+    imported_at: str
 
 
 @dataclass
@@ -246,8 +277,65 @@ class ChessDatabase:
 
     def clear(self) -> None:
         self.conn.execute("DELETE FROM pos_index")
+        self.conn.execute("DELETE FROM pgn_source_games")
+        self.conn.execute("DELETE FROM pgn_sources")
         self.conn.execute("DELETE FROM games")
         self.conn.commit()
+
+    # ------------------------------------------------------------------ #
+    # Fuentes PGN (usadas por los repertorios)
+    # ------------------------------------------------------------------ #
+    def create_source(self, label: str) -> int:
+        """Registra una fuente PGN y devuelve su identificador.
+
+        ``label`` es texto de interfaz; se acota para evitar que un nombre de
+        archivo inesperadamente enorme termine en la base de datos o en la UI.
+        Se permiten etiquetas repetidas: dos archivos con el mismo nombre en
+        carpetas distintas siguen siendo fuentes independientes y eliminables.
+        """
+        clean_label = str(label).strip().replace("\x00", " ")[:255] or "PGN sin nombre"
+        cursor = self.conn.execute("INSERT INTO pgn_sources (label) VALUES (?)", (clean_label,))
+        return int(cursor.lastrowid)
+
+    def list_sources(self) -> list[PgnSource]:
+        """Devuelve los PGN importados y su número de partidas, más recientes primero."""
+        rows = self.conn.execute(
+            "SELECT s.id, s.label, s.imported_at, COUNT(m.game_id) AS game_count "
+            "FROM pgn_sources s LEFT JOIN pgn_source_games m ON m.source_id = s.id "
+            "GROUP BY s.id ORDER BY s.id DESC"
+        ).fetchall()
+        return [
+            PgnSource(
+                id=int(row["id"]),
+                label=str(row["label"]),
+                game_count=int(row["game_count"]),
+                imported_at=str(row["imported_at"]),
+            )
+            for row in rows
+        ]
+
+    def remove_source(self, source_id: int) -> int:
+        """Elimina una fuente y exactamente las partidas que aportó.
+
+        Las partidas añadidas desde otro PGN o creadas manualmente no están
+        vinculadas a esta fuente, así que se conservan. La operación se hace en
+        una única transacción para no dejar un repertorio a medio actualizar.
+        """
+        ids = [
+            int(row[0])
+            for row in self.conn.execute(
+                "SELECT game_id FROM pgn_source_games WHERE source_id = ?", (source_id,)
+            ).fetchall()
+        ]
+        if not ids:
+            self.conn.execute("DELETE FROM pgn_sources WHERE id = ?", (source_id,))
+            self.conn.commit()
+            return 0
+        self.conn.execute("DELETE FROM pgn_sources WHERE id = ?", (source_id,))
+        placeholders = ",".join("?" for _ in ids)
+        self.conn.execute(f"DELETE FROM games WHERE id IN ({placeholders})", ids)
+        self.conn.commit()
+        return len(ids)
 
     def import_pgn(
         self,
@@ -255,12 +343,15 @@ class ChessDatabase:
         progress=None,
         cancel=None,
         player_counts: collections.Counter | None = None,
+        source_label: str | None = None,
     ) -> tuple[int, int]:
         """Importa un PGN por lotes.
 
         ``progress(percent, imported)`` se llama periódicamente.
         ``cancel`` es un ``threading.Event`` opcional para abortar.
         ``player_counts`` (Counter) acumula partidas por jugador si se pasa.
+        Si se indica ``source_label``, cada partida queda vinculada al archivo
+        importado y puede retirarse después mediante :meth:`remove_source`.
         """
         path = Path(path)
         size = max(1, path.stat().st_size)
@@ -268,7 +359,10 @@ class ChessDatabase:
         skipped = 0
         batch = 0
         consecutive_errors = 0
+        source_id: int | None = None
         with open(path, "r", encoding="utf-8", errors="replace") as handle:
+            if source_label is not None:
+                source_id = self.create_source(source_label)
             while True:
                 if cancel is not None and cancel.is_set():
                     break
@@ -299,7 +393,12 @@ class ChessDatabase:
                     skipped += 1
                     continue
                 try:
-                    self._insert_game(game)
+                    game_id = self._insert_game(game)
+                    if source_id is not None:
+                        self.conn.execute(
+                            "INSERT INTO pgn_source_games (source_id, game_id) VALUES (?, ?)",
+                            (source_id, game_id),
+                        )
                     imported += 1
                     batch += 1
                 except Exception:
@@ -311,6 +410,10 @@ class ChessDatabase:
                     if progress is not None:
                         percent = min(99, int(handle.buffer.tell() * 100 / size))
                         progress(percent, imported)
+            self.conn.commit()
+        # No mostramos fuentes vacías si el PGN no tenía ninguna partida válida.
+        if source_id is not None and imported == 0:
+            self.conn.execute("DELETE FROM pgn_sources WHERE id = ?", (source_id,))
             self.conn.commit()
         if progress is not None:
             progress(100, imported)

@@ -2,6 +2,26 @@
 
 El formato se inspira en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.7.0] — 2026-11-08
+
+### Añadido
+
+- Panel **Repertorios** con perfiles con nombre y bases independientes para
+  blancas y negras.
+- Importación de uno o varios PGN por repertorio, con progreso en segundo plano
+  y registro individual de cada archivo para poder retirarlo después.
+- Uso de un repertorio como fuente del explorador de aperturas y comparación
+  directa con la preparación de un rival; las continuaciones coincidentes se
+  resaltan en amarillo.
+
+### Mejorado
+
+- Índice compuesto para las consultas de posiciones del explorador y gestión
+  transaccional de fuentes PGN, reduciendo el trabajo al actualizar repertorios
+  grandes.
+- Avisos de distribución: se aclara el tratamiento local de datos de usuario y
+  la revisión de licencias necesaria antes de publicar binarios.
+
 ## [0.6.0] — 2026-11-08
 
 ### Añadido

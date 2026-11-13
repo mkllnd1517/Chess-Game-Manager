@@ -65,6 +65,45 @@ class GameTextParseWorker(QObject):
             self.finished.emit()
 
 
+class PgnSourceRemovalWorker(QObject):
+    """Quita fuentes PGN de una base sin bloquear la interfaz gráfica."""
+
+    progress = Signal(int, int)  # porcentaje, partidas eliminadas
+    finished = Signal(int)       # partidas eliminadas
+    failed = Signal(str)
+
+    def __init__(self, db_path: str, source_ids: list[int]):
+        super().__init__()
+        self._db_path = db_path
+        self._source_ids = [int(source_id) for source_id in source_ids]
+        self._cancel = threading.Event()
+
+    def cancel(self) -> None:
+        self._cancel.set()
+
+    def run(self) -> None:
+        db: ChessDatabase | None = None
+        try:
+            db = ChessDatabase(self._db_path)
+            removed = 0
+            total = max(1, len(self._source_ids))
+            for index, source_id in enumerate(self._source_ids, start=1):
+                if self._cancel.is_set():
+                    break
+                removed += db.remove_source(source_id)
+                self.progress.emit(int(index * 100 / total), removed)
+            db.close()
+            db = None
+            self.finished.emit(removed)
+        except Exception as exc:
+            if db is not None:
+                try:
+                    db.close()
+                except Exception:
+                    pass
+            self.failed.emit(str(exc))
+
+
 class PgnImportWorker(QObject):
     progress = Signal(int, int)   # porcentaje, partidas importadas
     finished = Signal(dict)       # resumen
@@ -76,10 +115,16 @@ class PgnImportWorker(QObject):
         pgn_paths: list[str],
         detect_players: bool = False,
         fresh: bool = False,
+        source_labels: list[str] | None = None,
     ):
         super().__init__()
         self._db_path = db_path
         self._pgn_paths = list(pgn_paths)
+        # Cuando se importa a un repertorio, cada fichero queda registrado por
+        # separado para poder quitarlo más tarde sin afectar a los demás.
+        self._source_labels = list(source_labels) if source_labels is not None else None
+        if self._source_labels is not None and len(self._source_labels) != len(self._pgn_paths):
+            raise ValueError("source_labels debe tener una etiqueta por cada PGN")
         self._detect_players = detect_players
         self._fresh = fresh
         self._cancel = threading.Event()
@@ -106,8 +151,13 @@ class PgnImportWorker(QObject):
                     overall = int((index * 100 + percent) / total_files)
                     self.progress.emit(overall, base + count)
 
+                source_label = self._source_labels[index] if self._source_labels is not None else None
                 done, miss = db.import_pgn(
-                    path, progress=report, cancel=self._cancel, player_counts=players
+                    path,
+                    progress=report,
+                    cancel=self._cancel,
+                    player_counts=players,
+                    source_label=source_label,
                 )
                 imported += done
                 skipped += miss

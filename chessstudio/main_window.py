@@ -52,6 +52,7 @@ from chessstudio.notation_view import NotationView
 from chessstudio.opening_tree import OpeningTreeWidget
 from chessstudio.opponent_prep import OpponentPrepWidget
 from chessstudio.pgn_utils import display_comment
+from chessstudio.repertoire import RepertoireWidget
 from chessstudio.search_dialog import SearchDialog
 from chessstudio.workers import (
     GameParseWorker,
@@ -389,11 +390,15 @@ class MainWindow(QMainWindow):
         self.opening_tree.remoteGameRequested.connect(self._open_remote_game)
         self.engine_panel = EnginePanel()
         self.opponent_prep = OpponentPrepWidget()
+        self.repertoire = RepertoireWidget()
         self.opponent_prep.gameSelected.connect(self._open_opponent_game)
         self.opponent_prep.prepDatabaseReady.connect(self._on_prep_database_ready)
         self.opponent_prep.referenceFilterChanged.connect(self.opening_tree.update_reference_filter)
         self.opponent_prep.explorerRequested.connect(self._show_explorer)
         self.opponent_prep.statusMessage.connect(lambda msg: self.statusBar().showMessage(msg, 6000))
+        self.repertoire.repertoireDatabaseReady.connect(self._on_repertoire_database_ready)
+        self.repertoire.comparisonRequested.connect(self._compare_repertoire_with_rival)
+        self.repertoire.statusMessage.connect(lambda msg: self.statusBar().showMessage(msg, 6000))
 
         self._build_docks()
         self._build_actions()
@@ -435,7 +440,15 @@ class MainWindow(QMainWindow):
         self.prep_dock = QDockWidget("Preparar rival", self)
         self.prep_dock.setWidget(self.opponent_prep)
         self.addDockWidget(Qt.RightDockWidgetArea, self.prep_dock)
+
+        self.repertoire_dock = QDockWidget("Repertorios", self)
+        self.repertoire_dock.setWidget(self.repertoire)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.repertoire_dock)
+
+        # Motor, preparación y repertorios son tareas de estudio alternativas:
+        # se agrupan en pestañas para que el tablero conserve espacio útil.
         self.tabifyDockWidget(self.engine_dock, self.prep_dock)
+        self.tabifyDockWidget(self.prep_dock, self.repertoire_dock)
         self.engine_dock.raise_()
         self.resizeDocks([self.tree_dock, self.engine_dock], [470, 330], Qt.Vertical)
 
@@ -493,6 +506,10 @@ class MainWindow(QMainWindow):
         self.act_prep.setToolTip("Abrir el panel de preparación de rival")
         self.act_prep.triggered.connect(self._show_prep)
 
+        self.act_repertoire = QAction("Repertorios", self)
+        self.act_repertoire.setToolTip("Crear repertorios de blancas y negras a partir de archivos PGN")
+        self.act_repertoire.triggered.connect(self._show_repertoire)
+
         self.act_close = QAction("Salir", self)
         self.act_close.setShortcut(QKeySequence.Quit)
         self.act_close.triggered.connect(self.close)
@@ -507,7 +524,7 @@ class MainWindow(QMainWindow):
         self.addToolBar(toolbar)
         for action in (self.act_new_game, self.act_open_db, self.act_open_pgn, self.act_save,
                        self.act_search, self.act_import, self.act_export, self.act_delete_games,
-                       self.act_flip, self.act_prep):
+                       self.act_flip, self.act_prep, self.act_repertoire):
             toolbar.addAction(action)
 
     def _build_menus(self) -> None:
@@ -536,6 +553,7 @@ class MainWindow(QMainWindow):
         menu_view.addAction(self.tree_dock.toggleViewAction())
         menu_view.addAction(self.engine_dock.toggleViewAction())
         menu_view.addAction(self.prep_dock.toggleViewAction())
+        menu_view.addAction(self.repertoire_dock.toggleViewAction())
 
         # Lista de partidas: tecla Supr y menú contextual (abrir / eliminar).
         self.game_list.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -964,6 +982,24 @@ class MainWindow(QMainWindow):
     def _on_prep_database_ready(self, database, player: str, color: str) -> None:
         self.opening_tree.set_reference_database(database, player, color)
 
+    def _on_repertoire_database_ready(self, database, name: str, color: str) -> None:
+        self.opening_tree.set_repertoire_database(database, name, color)
+        if database is not None:
+            self._show_explorer()
+
+    def _compare_repertoire_with_rival(self) -> None:
+        if self.opening_tree.show_repertoire_comparison():
+            self._show_explorer()
+            self.statusBar().showMessage(
+                "Comparando repertorio y rival: las jugadas amarillas coinciden en esta posición.", 7000
+            )
+        else:
+            QMessageBox.information(
+                self,
+                "Comparar repertorio",
+                "Carga primero una preparación de rival y activa un repertorio para comparar ambos.",
+            )
+
     def _show_explorer(self) -> None:
         self.tree_dock.show()
         self.tree_dock.raise_()
@@ -972,6 +1008,10 @@ class MainWindow(QMainWindow):
     def _show_prep(self) -> None:
         self.prep_dock.show()
         self.prep_dock.raise_()
+
+    def _show_repertoire(self) -> None:
+        self.repertoire_dock.show()
+        self.repertoire_dock.raise_()
 
     # ------------------------------------------------------------------ #
     # Cierre
@@ -999,6 +1039,7 @@ class MainWindow(QMainWindow):
             self._open_thread.quit()
             self._open_thread.wait(3000)
         self.engine_panel.shutdown()
+        self.repertoire.shutdown()
         self.opponent_prep.shutdown()
         if self.db is not None:
             self.db.close()

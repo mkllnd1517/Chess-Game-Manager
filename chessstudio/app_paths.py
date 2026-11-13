@@ -65,3 +65,13 @@ def app_documents_directory() -> Path:
 def preparation_directory() -> Path:
     """Ubicación por defecto de las bases de preparación de rivales."""
     return app_documents_directory() / "prep"
+
+
+def repertoire_directory() -> Path:
+    """Ubicación privada de las colecciones de repertorios del usuario.
+
+    Cada repertorio se guarda en una carpeta independiente con bases separadas
+    para blancas y negras. Nunca se utiliza la carpeta de instalación, que en
+    una aplicación empaquetada puede ser de solo lectura.
+    """
+    return app_documents_directory() / "repertoires"

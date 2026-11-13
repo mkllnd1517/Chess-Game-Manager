@@ -3,7 +3,7 @@
 ; ISCC está disponible, invoca este archivo automáticamente.
 
 #define AppName "ChessStudio"
-#define AppVersion "0.6.0"
+#define AppVersion "0.7.0"
 #define AppPublisher "Chess Game Manager contributors"
 #define AppURL "https://github.com/mkllnd1517/Chess-Game-Manager"
 #define AppExeName "ChessStudio.exe"

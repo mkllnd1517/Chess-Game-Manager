@@ -12,10 +12,12 @@ en el escritorio.
 """
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
 import sysconfig
+from importlib import metadata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,6 +46,46 @@ def has_shared_python_library() -> bool:
     return any(path.is_file() for path in candidates)
 
 
+def write_component_manifest(output: Path) -> Path:
+    """Registra versiones y procedencia de las bibliotecas de ejecución.
+
+    No sustituye los textos de licencia, pero permite revisar exactamente qué
+    se incluyó en una compilación y enlazarlo con `THIRD_PARTY_NOTICES.md`.
+    Los extras que no estén instalados no se anuncian como parte del binario.
+    """
+    known = (
+        ("chess", "python-chess", "https://github.com/niklasf/python-chess"),
+        ("PySide6-Essentials", "PySide6-Essentials", "https://doc.qt.io/qtforpython-6/"),
+        ("shiboken6", "shiboken6", "https://doc.qt.io/qtforpython-6/"),
+        ("keyring", "keyring (opcional)", "https://github.com/jaraco/keyring"),
+    )
+    components = []
+    for package, display_name, source in known:
+        try:
+            package_metadata = metadata.metadata(package)
+            version = metadata.version(package)
+        except metadata.PackageNotFoundError:
+            continue
+        components.append(
+            {
+                "package": package,
+                "name": display_name,
+                "version": version,
+                "license": package_metadata.get("License") or "Consultar la distribución exacta",
+                "source": source,
+            }
+        )
+    manifest = {
+        "format": 1,
+        "project": "ChessStudio — Chess Game Manager",
+        "components": components,
+        "notice": "Consulta LICENSE, NOTICE y THIRD_PARTY_NOTICES.md para los avisos y obligaciones aplicables.",
+    }
+    target = output / "THIRD_PARTY_COMPONENTS.json"
+    target.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return target
+
+
 def main() -> int:
     if not has_shared_python_library():
         print(
@@ -55,7 +97,10 @@ def main() -> int:
         )
         return 2
     run([sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", str(SPEC)])
-    print(f"\nAplicación creada: {ROOT / 'dist' / 'ChessStudio'}")
+    app_directory = ROOT / "dist" / "ChessStudio"
+    manifest = write_component_manifest(app_directory)
+    print(f"\nAplicación creada: {app_directory}")
+    print(f"Inventario de componentes: {manifest}")
 
     if sys.platform != "win32":
         print(

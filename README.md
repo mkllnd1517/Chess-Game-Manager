@@ -13,7 +13,8 @@ Plataformas como Lichess ofrecen excelentes servicios de análisis y exploració
 ## Características principales
 
 - **Preparación de rivales:** flujo guiado para crear una base de preparación a partir de un PGN con las partidas de un oponente y estudiar su repertorio.
-- **Explorador de aperturas:** consulta estadísticas de tus bases locales o utiliza el explorador online de Lichess.
+- **Explorador de aperturas:** consulta estadísticas de tus bases locales, repertorios personales o el explorador online de Lichess.
+- **Repertorios personales:** crea perfiles con nombre —por ejemplo, `e4`, `d4` o `Agresivo`— y mantén sus PGN de blancas y negras por separado; añade y retira cada archivo cuando quieras.
 - **Análisis con motores UCI:** utiliza Stockfish u otros motores compatibles que proporciones tú mismo, con análisis continuo, MultiPV y fijación de posiciones.
 - **Gestión de partidas:** importa, organiza, busca, edita y exporta partidas PGN.
 - **Edición avanzada de PGN:** conserva comentarios, variantes, flechas, casillas marcadas y símbolos de evaluación.
@@ -149,7 +150,7 @@ La ventana principal se organiza en tres zonas:
 |---|---|
 | Izquierda | Lista de partidas de la base de datos abierta. |
 | Centro | Pestañas de partidas con tablero interactivo y notación. |
-| Derecha | Explorador de aperturas, motor UCI y herramientas de preparación de rivales. |
+| Derecha | Explorador de aperturas, motor UCI, repertorios personales y herramientas de preparación de rivales. |
 
 Puedes abrir varias partidas simultáneamente en pestañas independientes. Los
 paneles laterales se pueden mostrar u ocultar desde el menú **Ver** y
@@ -238,6 +239,29 @@ mediante las etiquetas estándar `%cal` y `%csl`, por lo que pueden visualizarse
 en Lichess, Chess.com y otros programas compatibles. Las anotaciones de PGN
 descargados de estas plataformas también se reconocen automáticamente.
 
+## Repertorios personales
+
+El panel **Repertorios** permite construir una colección de aperturas propia
+sin mezclarla con la base general. Cada repertorio tiene un nombre y dos
+secciones independientes: **Con blancas** y **Con negras**. Puedes crear, por
+ejemplo, `Repertorio e4`, `Repertorio d4` y `Repertorio agresivo`.
+
+1. Abre **Repertorios** desde la barra de herramientas o el menú **Ver** y pulsa **Nuevo...**.
+2. Escribe un nombre y elige la pestaña **Con blancas** o **Con negras**.
+3. Pulsa **Añadir PGN...**. Cada archivo queda registrado de forma independiente.
+4. Selecciona **Usar este repertorio en Aperturas** para estudiar sus continuaciones sobre el tablero actual.
+
+La lista muestra los archivos incluidos y el número de partidas de cada uno.
+Selecciona uno o varios y pulsa **Quitar seleccionados** para retirar solo sus
+partidas del repertorio; los PGN originales nunca se borran. Los repertorios
+se guardan localmente en `Documentos/ChessStudio/repertoires/`.
+
+Si has cargado una preparación de rival, pulsa **Comparar este repertorio con
+el rival**. El explorador muestra ambas fuentes y resalta en amarillo las
+continuaciones que están presentes tanto en tu repertorio como en las partidas
+del rival: son las líneas por las que podría transcurrir el encuentro desde la
+posición actual.
+
 ## Preparación de rivales
 
 La preparación de oponentes permite crear una base de datos específica a partir
@@ -282,8 +306,10 @@ El explorador integrado en el panel derecho ofrece dos fuentes de datos.
 ### Base local
 
 Consulta estadísticas de las partidas almacenadas en tus bases. Puedes estudiar
-tu propio repertorio, el de un rival o comparar ambos. Cuando hay una
-preparación activa, el modo **Solo rival** utiliza la base del oponente.
+tu base principal, un repertorio de blancas o negras, el repertorio de un rival
+o comparar dos fuentes. Cuando hay una preparación activa, el modo **Solo
+rival** utiliza la base del oponente; si activas un repertorio, aparece también
+la opción **Repertorio + rival · líneas coincidentes**.
 
 ### Lichess
 
@@ -350,6 +376,15 @@ Además:
 - Las peticiones no siguen redirecciones HTTP.
 - Se recomienda crear un token sin permisos adicionales y tratarlo como información confidencial.
 
+### Repertorios y datos locales
+
+Los repertorios se guardan en la carpeta de documentos del sistema, separados
+de la aplicación instalada. Al añadir un PGN se conserva una copia indexada de
+sus partidas y el nombre visible del archivo para poder quitarlo más adelante;
+no se guardan rutas absolutas ni se envían repertorios a Lichess o a otro
+servicio. Antes de compartir un repertorio o sus PGN, asegúrate de que tienes
+permiso para distribuir esas partidas.
+
 ### Tratamiento de PGN externos
 
 Los archivos PGN pueden proceder de fuentes no confiables. Para reducir riesgos:
@@ -386,7 +421,9 @@ Chess-Game-Manager/
 │   ├── board_widget.py            # Tablero interactivo y anotaciones
 │   ├── notation_view.py           # Notación, variantes y comentarios
 │   ├── database.py                # SQLite e índice de posiciones
-│   ├── opening_tree.py            # Explorador local y Lichess
+│   ├── opening_tree.py            # Explorador local, repertorios y Lichess
+│   ├── repertoire.py              # Panel de repertorios personales
+│   ├── repertoire_store.py        # Perfiles y bases de blancas/negras
 │   ├── opponent_prep.py           # Preparación de rivales
 │   ├── engine_panel.py            # Integración con motores UCI
 │   ├── pgn_utils.py               # Anotaciones y comentarios PGN

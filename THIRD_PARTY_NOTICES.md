@@ -6,7 +6,7 @@
 >
 > Este inventario se ha contrastado con las dependencias declaradas en
 > `pyproject.toml` y los archivos `requirements*.txt`, los recursos incluidos y
-> la cadena de empaquetado del repositorio a fecha de la versión 0.6.0. No sustituye la
+> la cadena de empaquetado del repositorio a fecha de la versión 0.7.0. No sustituye la
 > comprobación jurídica de una publicación concreta ni constituye asesoramiento
 > legal.
 
@@ -65,7 +65,17 @@ incluye en el repositorio ni en los instaladores. El uso está sujeto a los
 [términos de Lichess](https://lichess.org/terms-of-service) y a las condiciones
 de su API. La integración no implica patrocinio, afiliación ni aprobación.
 
-## 5. Lista de verificación para una publicación pública
+## 5. Contenido aportado por la persona usuaria
+
+Las partidas, bases, comentarios, repertorios y archivos PGN que se importan
+permanecen localmente en el equipo salvo que la persona usuaria decida
+exportarlos o utilizar un servicio externo. ChessStudio no concede derechos
+sobre esos datos ni verifica su procedencia: quien importe, comparta o publique
+un PGN debe contar con los permisos necesarios y respetar las condiciones de
+la fuente de la que lo obtuvo. Los repertorios guardan únicamente sus bases
+locales y etiquetas de archivo; no suben PGN ni rutas locales al proyecto.
+
+## 6. Lista de verificación para una publicación pública
 
 Antes de adjuntar un instalador a una *release*:
 
@@ -73,17 +83,25 @@ Antes de adjuntar un instalador a una *release*:
 2. Genera el paquete con `python scripts/build_release.py` desde un entorno
    limpio y anota las versiones exactas instaladas (`python -m pip freeze`).
 3. Comprueba que el binario contiene `LICENSE`, `NOTICE`,
-   `THIRD_PARTY_NOTICES.md`, las piezas `cburnett` y sus textos GPL.
-4. Añade los avisos/licencias de las bibliotecas Qt/PySide6 que PyInstaller haya
-   copiado y conserva un enlace claro al código fuente correspondiente de esta
-   misma versión (por ejemplo, la etiqueta de GitHub de la *release*).
-5. No empaquetes bases personales, PGN privados, tokens, motores UCI ni claves.
+   `THIRD_PARTY_NOTICES.md`, `THIRD_PARTY_COMPONENTS.json`, las piezas
+   `cburnett` y sus textos GPL. El inventario JSON se genera durante la
+   compilación y deja constancia de las versiones de ejecución detectadas.
+4. Revisa los avisos, textos de licencia y versiones exactas de todas las
+   dependencias que PyInstaller haya copiado, especialmente Qt/PySide6. Incluye
+   los avisos exigidos por esas versiones y conserva un enlace claro al código
+   fuente correspondiente de esta misma versión (por ejemplo, una etiqueta de
+   GitHub de la *release* y las fuentes de las dependencias GPL).
+5. No empaquetes bases personales, PGN privados, repertorios, tokens, motores
+   UCI ni claves. El instalador debe crear los datos de la persona usuaria tras
+   la instalación, nunca incluirlos desde el equipo de desarrollo.
 6. Firma el instalador y publica hashes cuando se disponga de un certificado de
-   firma; prueba la instalación y desinstalación en una máquina limpia.
+   firma; prueba la instalación, apertura de un PGN y desinstalación en una
+   máquina limpia.
 7. Actualiza este documento si cambian dependencias, recursos, versiones o la
-   forma de distribución.
+   forma de distribución, y realiza una revisión jurídica profesional cuando
+   el caso de uso o la jurisdicción lo requieran.
 
-## 6. Alcance
+## 7. Alcance
 
 Esta documentación pretende hacer visibles las obligaciones conocidas y evitar
 atribuciones engañosas. No garantiza que todos los requisitos legales de una

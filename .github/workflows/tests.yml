@@ -77,5 +77,6 @@ jobs:
           test -f dist/ChessStudio/_internal/LICENSE
           test -f dist/ChessStudio/_internal/NOTICE
           test -f dist/ChessStudio/_internal/THIRD_PARTY_NOTICES.md
+          test -f dist/ChessStudio/THIRD_PARTY_COMPONENTS.json
           test -f dist/ChessStudio/_internal/chessstudio/pieces/wK.svg
           test -f dist/ChessStudio/_internal/chessstudio/assets/chessstudio.svg
