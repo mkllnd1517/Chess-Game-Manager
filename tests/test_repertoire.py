@@ -1,15 +1,24 @@
 """Pruebas de repertorios personales y comparación en el explorador."""
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import chess
 import chess.pgn
 import pytest
+from PySide6.QtWidgets import QApplication
 
 from chessstudio.database import ChessDatabase
 from chessstudio.opening_tree import OpeningTreeWidget
 from chessstudio.repertoire_store import RepertoireError, RepertoireLibrary
+
+
+@pytest.fixture(scope="session")
+def qapp():
+    """Una QApplication reutilizable para el test del explorador."""
+    app = QApplication.instance() or QApplication(sys.argv)
+    yield app
 
 
 def _write_pgn(path: Path, moves: list[str]) -> None:
