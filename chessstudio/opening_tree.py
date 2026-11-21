@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from chessstudio import APP_NAME
 from chessstudio.lichess_explorer import (
     ALL_SPEEDS,
     RATING_PRESETS,
@@ -41,6 +42,7 @@ from chessstudio.lichess_explorer import (
 from chessstudio.secure_store import get_token, set_token, storage_description
 
 REF_BG = QColor("#e8f5e9")
+PRIMARY_ONLY_BG = QColor("#e3f2fd")
 COMMON_BG = QColor("#fff8e1")
 ERROR_STYLE = "color:#c62828;"
 OK_STYLE = "color:#2e7d32;"
@@ -65,7 +67,7 @@ class OpeningTreeWidget(QWidget):
         self._scope = "main"  # main | rival | compare | repertoire | repertoire_compare
         self._fen = chess.STARTING_FEN
         self._lichess_key = ""
-        self._settings = QSettings("ChessStudio", "ChessStudio")
+        self._settings = QSettings(APP_NAME, APP_NAME)
 
         self.explorer = LichessExplorer(self)
         self.explorer.set_token(get_token())
@@ -107,9 +109,9 @@ class OpeningTreeWidget(QWidget):
         self.info = QLabel("Sin base de datos abierta.")
         self.info.setWordWrap(True)
         self.info.setTextFormat(Qt.PlainText)  # nombres del PGN no confiables
-        self.table = QTableWidget(0, 8)
+        self.table = QTableWidget(0, 9)
         self.table.setHorizontalHeaderLabels(
-            ["Jugada", "Partidas", "%B", "%T", "%N", "Año", "Rival", "R %B"]
+            ["Jugada", "Partidas", "%B", "%T", "%N", "Año", "Rival", "R %B", "Presencia"]
         )
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -118,11 +120,12 @@ class OpeningTreeWidget(QWidget):
         header = self.table.horizontalHeader()
         header.setMinimumSectionSize(46)
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        for column in range(1, 8):
+        for column in range(1, 9):
             header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
         header.setStretchLastSection(True)
         self.table.setColumnHidden(6, True)
         self.table.setColumnHidden(7, True)
+        self.table.setColumnHidden(8, True)
         self.table.cellDoubleClicked.connect(self._on_local_double_click)
 
         hint = QLabel("Doble clic en una jugada para jugarla en el tablero.")
@@ -359,14 +362,17 @@ class OpeningTreeWidget(QWidget):
             self.info.setText("Sin base de datos abierta.")
             self.table.setColumnHidden(6, True)
             self.table.setColumnHidden(7, True)
+            self.table.setColumnHidden(8, True)
             return
 
         scope = self._scope
         compare = scope in {"compare", "repertoire_compare"}
         self.table.setColumnHidden(6, not compare)
         self.table.setColumnHidden(7, not compare)
+        self.table.setColumnHidden(8, not compare)
+        primary_column = "Repertorio" if scope in {"repertoire", "repertoire_compare"} else "Base actual"
         self.table.setHorizontalHeaderLabels(
-            ["Jugada", "Partidas", "%B", "%T", "%N", "Año", "Rival", "R %B"]
+            ["Jugada", primary_column, "%B", "%T", "%N", "Año", "Rival", "R %B", "Presencia"]
         )
 
         # Elegir una fuente principal no mezcla bases: así el usuario puede
@@ -393,7 +399,8 @@ class OpeningTreeWidget(QWidget):
             return
 
         primary_total = sum(s.games for s in primary_stats)
-        text = f"{primary_label}: {primary_total} partidas"
+        primary_noun = "líneas" if scope in {"repertoire", "repertoire_compare"} else "partidas"
+        text = f"{primary_label}: {primary_total} {primary_noun}"
         if compare:
             ref_total = sum(s.games for s in ref_stats)
             common = sum(1 for move in all_moves if move in primary_dict and move in ref_dict)
@@ -403,6 +410,7 @@ class OpeningTreeWidget(QWidget):
                     text += f"  ·  {common} continuación(es) coincidente(s)"
                 else:
                     text += "  ·  Sin continuaciones coincidentes"
+                text += "  ·  Azul: solo repertorio · Verde: solo rival · Amarillo: ambas"
         self.info.setText(text + ".")
 
         sorted_moves = sorted(
@@ -424,17 +432,36 @@ class OpeningTreeWidget(QWidget):
                     values += [str(rstat.games), f"{rstat.white_score:.0f}%"]
                 else:
                     values += ["—", "—"]
+                if pstat and rstat:
+                    presence = "Repertorio y rival" if scope == "repertoire_compare" else "Base y rival"
+                    presence_tip = "La continuación aparece en ambas fuentes."
+                    presence_bg = COMMON_BG
+                elif pstat:
+                    presence = "Solo repertorio" if scope == "repertoire_compare" else "Solo base"
+                    presence_tip = "La continuación aparece solo en la fuente principal."
+                    presence_bg = PRIMARY_ONLY_BG
+                else:
+                    presence = "Solo rival"
+                    presence_tip = "La continuación aparece solo en la base del rival."
+                    presence_bg = REF_BG
+                values += [presence]
             else:
-                values += ["", ""]
+                values += ["", "", ""]
             for column, value in enumerate(values):
                 item = QTableWidgetItem(value)
                 if column > 0:
                     item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
                 if compare and column >= 6 and rstat and rstat.games:
                     item.setBackground(REF_BG)
-                if scope == "repertoire_compare" and pstat and rstat and column == 0:
-                    item.setBackground(COMMON_BG)
-                    item.setToolTip("Esta continuación aparece en el repertorio y en las partidas del rival.")
+                if compare and column == 8:
+                    item.setBackground(presence_bg)
+                    item.setToolTip(presence_tip)
+                if scope == "repertoire_compare" and column == 0:
+                    # La etiqueta de presencia ya es explícita; colorear también
+                    # la jugada hace que la diferencia se detecte de inmediato
+                    # al recorrer la primera columna.
+                    item.setBackground(presence_bg)
+                    item.setToolTip(presence_tip)
                 self.table.setItem(row, column, item)
         self.table.setUpdatesEnabled(True)
 

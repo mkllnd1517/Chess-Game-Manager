@@ -15,6 +15,10 @@ from PySide6.QtCore import QStandardPaths
 
 from chessstudio import APP_NAME
 
+# Solo para migrar datos de usuarios de ediciones anteriores. No es un nombre
+# mostrado por la interfaz ni se usa para crear datos nuevos.
+_LEGACY_APP_DIRECTORY_NAME = "ChessStudio"
+
 
 def resource_path(*parts: str) -> Path:
     """Devuelve una ruta de solo lectura incluida con la aplicación.
@@ -33,7 +37,7 @@ def legal_document_path(filename: str) -> Path | None:
     if bundled.is_file():
         return bundled
     try:
-        distribution = metadata.distribution("chess-game-manager")
+        distribution = metadata.distribution("chess-games-manager")
         files = distribution.files or []
         # setuptools instala ``license-files`` bajo dist-info/licenses/.
         for file in files:
@@ -58,8 +62,26 @@ def documents_directory() -> Path:
 
 
 def app_documents_directory() -> Path:
-    """Carpeta de datos visibles del usuario para bases y preparaciones."""
-    return documents_directory() / APP_NAME
+    """Carpeta de datos visibles del usuario para bases y preparaciones.
+
+    En la primera ejecución tras el cambio de nombre se traslada de forma
+    atómica la carpeta de datos anterior si todavía no existe la nueva. Si el
+    sistema no permite el cambio de nombre, se sigue usando la carpeta antigua
+    para no ocultar bases, repertorios o preparaciones ya creadas.
+    """
+    root = documents_directory()
+    target = root / APP_NAME
+    legacy = root / _LEGACY_APP_DIRECTORY_NAME
+    if target.exists() or not legacy.is_dir():
+        return target
+    try:
+        legacy.replace(target)
+    except OSError:
+        # Otra instancia pudo completar la migración, o el volumen no permite
+        # renombrar en este momento. En ambos casos se conserva el acceso a
+        # los datos existentes en vez de crear una colección vacía.
+        return target if target.exists() else legacy
+    return target
 
 
 def preparation_directory() -> Path:

@@ -116,6 +116,7 @@ class PgnImportWorker(QObject):
         detect_players: bool = False,
         fresh: bool = False,
         source_labels: list[str] | None = None,
+        include_variations: bool = False,
     ):
         super().__init__()
         self._db_path = db_path
@@ -127,6 +128,7 @@ class PgnImportWorker(QObject):
             raise ValueError("source_labels debe tener una etiqueta por cada PGN")
         self._detect_players = detect_players
         self._fresh = fresh
+        self._include_variations = include_variations
         self._cancel = threading.Event()
 
     def cancel(self) -> None:
@@ -158,6 +160,7 @@ class PgnImportWorker(QObject):
                     cancel=self._cancel,
                     player_counts=players,
                     source_label=source_label,
+                    include_variations=self._include_variations,
                 )
                 imported += done
                 skipped += miss

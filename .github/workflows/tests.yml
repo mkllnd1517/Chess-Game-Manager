@@ -74,9 +74,9 @@ jobs:
         run: |
           # PyInstaller 6 coloca datos y librerías en _internal/ en las
           # compilaciones one-folder; el bootloader lo expone como _MEIPASS.
-          test -f dist/ChessStudio/_internal/LICENSE
-          test -f dist/ChessStudio/_internal/NOTICE
-          test -f dist/ChessStudio/_internal/THIRD_PARTY_NOTICES.md
-          test -f dist/ChessStudio/THIRD_PARTY_COMPONENTS.json
-          test -f dist/ChessStudio/_internal/chessstudio/pieces/wK.svg
-          test -f dist/ChessStudio/_internal/chessstudio/assets/chessstudio.svg
+          test -f dist/ChessGamesManager/_internal/LICENSE
+          test -f dist/ChessGamesManager/_internal/NOTICE
+          test -f dist/ChessGamesManager/_internal/THIRD_PARTY_NOTICES.md
+          test -f dist/ChessGamesManager/THIRD_PARTY_COMPONENTS.json
+          test -f dist/ChessGamesManager/_internal/chessstudio/pieces/wK.svg
+          test -f dist/ChessGamesManager/_internal/chessstudio/assets/chessstudio.svg

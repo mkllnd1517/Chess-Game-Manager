@@ -14,13 +14,15 @@ import pytest
 from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication
 
+from chessstudio import APP_NAME
+
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 _app = QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture(autouse=True, scope="session")
 def _disable_engine_autostart():
-    settings = QSettings("ChessStudio", "ChessStudio")
+    settings = QSettings(APP_NAME, APP_NAME)
     prev_autostart = settings.value("engine/autostart", True, bool)
     settings.setValue("engine/autostart", False)
     settings.sync()

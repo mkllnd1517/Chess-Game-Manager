@@ -183,7 +183,15 @@ class RepertoireWidget(QWidget):
         db = self._databases.get(color)
         if db is None:
             db = ChessDatabase(self.library.database_path(self._current, color))
+            # Los repertorios creados antes de la indexación por variantes se
+            # actualizan una vez al abrirse. Las partidas habituales no usan
+            # esta ruta y continúan indexando solo la línea principal.
+            converted = db.enable_variation_index_for_sources()
             self._databases[color] = db
+            if converted:
+                self.statusMessage.emit(
+                    f"Repertorio actualizado: {converted} partida(s) indexada(s) con todas sus variantes."
+                )
         return db
 
     def _close_databases(self) -> None:
@@ -291,9 +299,10 @@ class RepertoireWidget(QWidget):
         else:
             self.sources_label.setText(f"Aún no hay PGN añadidos al repertorio {color_text}.")
         for source in sources:
-            item = QListWidgetItem(f"{source.label}  —  {source.game_count} partida(s)")
+            indexed = "todas las variantes" if source.include_variations else "línea principal"
+            item = QListWidgetItem(f"{source.label}  —  {source.game_count} partida(s) · {indexed}")
             item.setData(Qt.UserRole, source.id)
-            item.setToolTip(f"Importado: {source.imported_at}")
+            item.setToolTip(f"Importado: {source.imported_at}\nÍndice: {indexed}.")
             self.source_list.addItem(item)
 
     def _add_pgn(self) -> None:
@@ -306,7 +315,9 @@ class RepertoireWidget(QWidget):
         if not paths:
             return
         labels = [Path(path).name for path in paths]
-        self._worker = PgnImportWorker(str(db.path), paths, source_labels=labels)
+        self._worker = PgnImportWorker(
+            str(db.path), paths, source_labels=labels, include_variations=True
+        )
         self._worker.progress.connect(self._on_import_progress)
         self._worker.finished.connect(self._on_import_finished)
         self._worker.failed.connect(self._on_import_failed)

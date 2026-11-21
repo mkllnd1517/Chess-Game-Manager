@@ -167,9 +167,9 @@ def test_pgn_path_from_command_line(tmp_path):
 
     game = tmp_path / "partida.PGN"
     game.write_text("[Result \"*\"]\n\n*\n", encoding="utf-8")
-    assert pgn_path_from_arguments(["chessstudio", "--other", str(game)]) == str(game)
-    assert pgn_path_from_arguments(["chessstudio", str(tmp_path / "missing.pgn")]) is None
-    assert pgn_path_from_arguments(["chessstudio", str(tmp_path / "notes.txt")]) is None
+    assert pgn_path_from_arguments(["chess-games-manager", "--other", str(game)]) == str(game)
+    assert pgn_path_from_arguments(["chess-games-manager", str(tmp_path / "missing.pgn")]) is None
+    assert pgn_path_from_arguments(["chess-games-manager", str(tmp_path / "notes.txt")]) is None
 
 
 def test_variation_chooser_accepts_right_arrow(qapp):

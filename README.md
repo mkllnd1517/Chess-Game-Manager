@@ -1,21 +1,21 @@
-# ChessStudio — Chess Game Manager
+# Chess Games Manager
 
 > Gestor de bases de datos de ajedrez, explorador de aperturas y herramienta de preparación de rivales.
 
-Chess Game Manager nace con un objetivo sencillo: ofrecer una herramienta gratuita y de código abierto para organizar partidas, estudiar aperturas y preparar rivales desde un único entorno de escritorio. La aplicación se llama **ChessStudio** en el sistema y en la ventana principal.
+Chess Games Manager nace con un objetivo sencillo: ofrecer una herramienta gratuita y de código abierto para organizar partidas, estudiar aperturas y preparar rivales desde un único entorno de escritorio.
 
-Plataformas como Lichess ofrecen excelentes servicios de análisis y exploración. ChessStudio está pensado para un flujo de trabajo complementario: colecciones PGN propias, estudio de un rival concreto, bases locales y análisis con el motor UCI que cada persona elija instalar.
+Plataformas como Lichess ofrecen excelentes servicios de análisis y exploración. Chess Games Manager está pensado para un flujo de trabajo complementario: colecciones PGN propias, estudio de un rival concreto, bases locales y análisis con el motor UCI que cada persona elija instalar.
 
 <p align="center">
-  <img src="capturas/1_piezas_comentarios_rival.png" alt="ChessStudio con tablero, notación, explorador y preparación de rival" width="820">
+  <img src="capturas/1_piezas_comentarios_rival.png" alt="Chess Games Manager con tablero, notación, explorador y preparación de rival" width="820">
 </p>
 
 ## Características principales
 
 - **Preparación de rivales:** flujo guiado para crear una base de preparación a partir de un PGN con las partidas de un oponente y estudiar su repertorio.
 - **Explorador de aperturas:** consulta estadísticas de tus bases locales, repertorios personales o el explorador online de Lichess.
-- **Repertorios personales:** crea perfiles con nombre —por ejemplo, `e4`, `d4` o `Agresivo`— y mantén sus PGN de blancas y negras por separado; añade y retira cada archivo cuando quieras.
-- **Análisis con motores UCI:** utiliza Stockfish u otros motores compatibles que proporciones tú mismo, con análisis continuo, MultiPV y fijación de posiciones.
+- **Repertorios personales:** crea perfiles con nombre —por ejemplo, `e4`, `d4` o `Agresivo`—, conserva blancas y negras por separado e indexa todas las variantes de tus PGN de aperturas.
+- **Análisis con motores UCI:** utiliza Stockfish u otros motores compatibles que proporciones tú mismo, con análisis continuo, MultiPV legible, números de jugada y fijación de posiciones.
 - **Gestión de partidas:** importa, organiza, busca, edita y exporta partidas PGN.
 - **Edición avanzada de PGN:** conserva comentarios, variantes, flechas, casillas marcadas y símbolos de evaluación.
 - **Tablero interactivo:** navega por las partidas, crea variantes y añade anotaciones directamente sobre el tablero.
@@ -31,7 +31,7 @@ Plataformas como Lichess ofrecen excelentes servicios de análisis y exploració
 - Conexión a internet únicamente durante la instalación de dependencias.
 - Un motor compatible con el protocolo UCI, solo si quieres usar el análisis de motor.
 
-> **Los motores de ajedrez no se incluyen ni se distribuyen con ChessStudio.**
+> **Los motores de ajedrez no se incluyen ni se distribuyen con Chess Games Manager.**
 > Cada usuario debe obtener e instalar su propio motor y seleccionar su
 > ejecutable desde la aplicación. Revisa la licencia del motor que decidas usar.
 
@@ -162,7 +162,7 @@ Al iniciar la aplicación se crea o abre automáticamente la base de datos
 principal:
 
 ```text
-Documentos/ChessStudio/default.csdb
+Documentos/Chess Games Manager/default.csdb
 ```
 
 Para empezar:
@@ -177,7 +177,7 @@ automáticamente sobre el tablero.
 
 ### Gestión de bases de datos y archivos PGN
 
-ChessStudio permite trabajar tanto con bases de datos locales como con archivos
+Chess Games Manager permite trabajar tanto con bases de datos locales como con archivos
 PGN independientes.
 
 | Acción | Descripción |
@@ -185,7 +185,7 @@ PGN independientes.
 | **Importar PGN a la base...** | Incorpora uno o varios archivos PGN a la base abierta. |
 | **Abrir PGN...** | Abre un archivo en una pestaña sin importarlo. Si contiene varias partidas, abre la primera y avisa. |
 | **Guardar en base** (`Ctrl+S`) | Guarda la partida abierta, incluidos comentarios, variantes y anotaciones. Si todavía no está en la base, crea una entrada nueva. |
-| **Exportar partida...** | Exporta únicamente la partida abierta a un PGN estándar, incluidos los cambios sin guardar. |
+| **Exportar partida...** | Tras elegir el destino, permite revisar evento, jugadores y demás propiedades antes de exportar la partida abierta a un PGN estándar. |
 | **Abrir base** (`Ctrl+O`) | Permite abrir otra base de datos. |
 
 La exportación utiliza escritura atómica para evitar dejar archivos incompletos
@@ -248,19 +248,19 @@ ejemplo, `Repertorio e4`, `Repertorio d4` y `Repertorio agresivo`.
 
 1. Abre **Repertorios** desde la barra de herramientas o el menú **Ver** y pulsa **Nuevo...**.
 2. Escribe un nombre y elige la pestaña **Con blancas** o **Con negras**.
-3. Pulsa **Añadir PGN...**. Cada archivo queda registrado de forma independiente.
-4. Selecciona **Usar este repertorio en Aperturas** para estudiar sus continuaciones sobre el tablero actual.
+3. Pulsa **Añadir PGN...**. Cada archivo queda registrado de forma independiente y se indexan **todas sus variantes**, no solo la línea principal.
+4. Selecciona **Usar este repertorio en Aperturas** para estudiar todas sus continuaciones sobre el tablero actual.
 
 La lista muestra los archivos incluidos y el número de partidas de cada uno.
 Selecciona uno o varios y pulsa **Quitar seleccionados** para retirar solo sus
 partidas del repertorio; los PGN originales nunca se borran. Los repertorios
-se guardan localmente en `Documentos/ChessStudio/repertoires/`.
+se guardan localmente en `Documentos/Chess Games Manager/repertoires/`.
 
 Si has cargado una preparación de rival, pulsa **Comparar este repertorio con
-el rival**. El explorador muestra ambas fuentes y resalta en amarillo las
-continuaciones que están presentes tanto en tu repertorio como en las partidas
-del rival: son las líneas por las que podría transcurrir el encuentro desde la
-posición actual.
+el rival**. El explorador separa claramente las fuentes: azul para jugadas
+solo presentes en el repertorio, verde para jugadas solo presentes en el rival
+y amarillo para las que aparecen en ambas. Estas últimas son las líneas por las
+que podría transcurrir el encuentro desde la posición actual.
 
 ## Preparación de rivales
 
@@ -274,7 +274,7 @@ oponente. La importación se realiza en segundo plano, con barra de progreso y
 opción de cancelación. La base de preparación se guarda en:
 
 ```text
-Documentos/ChessStudio/prep/<nombre>.csdb
+Documentos/Chess Games Manager/prep/<nombre>.csdb
 ```
 
 ### Paso 2 — Confirmar el rival y el color
@@ -338,7 +338,7 @@ condiciones aplicables a su API.
 
 ## Motores UCI
 
-ChessStudio puede comunicarse con motores compatibles con el protocolo UCI,
+Chess Games Manager puede comunicarse con motores compatibles con el protocolo UCI,
 como Stockfish. La aplicación no incluye, descarga, aloja ni redistribuye esos
 motores: el usuario debe obtenerlos por separado, aceptar sus condiciones y
 seleccionar el ejecutable desde la aplicación.
@@ -436,7 +436,7 @@ Chess-Game-Manager/
 
 ## Licencia
 
-Chess Game Manager se distribuye bajo la licencia **GNU General Public License
+Chess Games Manager se distribuye bajo la licencia **GNU General Public License
 v3.0 o, a elección del usuario, cualquier versión posterior
 (GPL-3.0-or-later)**. Consulta [`LICENSE`](LICENSE).
 

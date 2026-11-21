@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Construye el paquete de escritorio reproducible de ChessStudio.
+"""Construye el paquete de escritorio reproducible de Chess Games Manager.
 
 Uso:
     python -m pip install -e ".[build]"
     python scripts/build_release.py
 
-El resultado principal es ``dist/ChessStudio/``. En Windows, si Inno Setup 6
+El resultado principal es ``dist/ChessGamesManager/``. En Windows, si Inno Setup 6
 (``ISCC.exe``) está instalado y disponible en PATH, también se crea
-``dist/installer/ChessStudio-Setup-<versión>.exe`` con acceso directo opcional
+``dist/installer/Chess-Games-Manager-Setup-<versión>.exe`` con acceso directo opcional
 en el escritorio.
 """
 from __future__ import annotations
@@ -21,8 +21,8 @@ from importlib import metadata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SPEC = ROOT / "packaging" / "ChessStudio.spec"
-WINDOWS_INSTALLER = ROOT / "packaging" / "windows" / "ChessStudio.iss"
+SPEC = ROOT / "packaging" / "ChessGamesManager.spec"
+WINDOWS_INSTALLER = ROOT / "packaging" / "windows" / "ChessGamesManager.iss"
 
 
 def run(command: list[str]) -> None:
@@ -77,7 +77,7 @@ def write_component_manifest(output: Path) -> Path:
         )
     manifest = {
         "format": 1,
-        "project": "ChessStudio — Chess Game Manager",
+        "project": "Chess Games Manager",
         "components": components,
         "notice": "Consulta LICENSE, NOTICE y THIRD_PARTY_NOTICES.md para los avisos y obligaciones aplicables.",
     }
@@ -97,14 +97,14 @@ def main() -> int:
         )
         return 2
     run([sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", str(SPEC)])
-    app_directory = ROOT / "dist" / "ChessStudio"
+    app_directory = ROOT / "dist" / "ChessGamesManager"
     manifest = write_component_manifest(app_directory)
     print(f"\nAplicación creada: {app_directory}")
     print(f"Inventario de componentes: {manifest}")
 
     if sys.platform != "win32":
         print(
-            "\nEn Linux, distribuye la carpeta dist/ChessStudio completa. "
+            "\nEn Linux, distribuye la carpeta dist/ChessGamesManager completa. "
             "Para integrar el acceso directo, consulta packaging/linux/README.md."
         )
         return 0

@@ -37,7 +37,7 @@ def main() -> None:
         line = raw.strip()
         if line == "uci":
             emit("id name FakeEngine 1.0")
-            emit("id author ChessStudio Tests")
+            emit("id author Chess Games Manager Tests")
             emit("option name MultiPV type spin default 1 min 1 max 5")
             emit("uciok")
         elif line == "isready":

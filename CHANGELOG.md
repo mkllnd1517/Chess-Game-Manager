@@ -2,6 +2,23 @@
 
 El formato se inspira en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [0.7.1] — 2026-11-08
+
+### Añadido
+
+- Los PGN de repertorio indexan todas sus variantes de apertura, no solo la
+  línea principal. Los repertorios ya creados se actualizan al abrirse.
+- Al exportar una partida, tras elegir el destino se revisan sus propiedades
+  PGN para que el archivo incluya las cabeceras deseadas.
+
+### Mejorado
+
+- El comparador identifica de forma explícita jugadas exclusivas del
+  repertorio, exclusivas del rival y presentes en ambas fuentes.
+- Las recomendaciones MultiPV del motor muestran números de jugada y bloques
+  visualmente separados.
+- El producto, instalador y ayuda se denominan Chess Games Manager.
+
 ## [0.7.0] — 2026-11-08
 
 ### Añadido
@@ -26,7 +43,7 @@ El formato se inspira en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1
 
 ### Añadido
 
-- Punto de entrada gráfico `chessstudio`, metadatos `pyproject.toml` y receta
+- Punto de entrada gráfico `chess-games-manager`, metadatos `pyproject.toml` y receta
   reproducible de PyInstaller/Inno Setup para instaladores de escritorio.
 - Icono propio de la aplicación, lanzador `.desktop` de Linux, asociación de
   archivos `.pgn` en Windows y documentación de instalación sin ejecutar

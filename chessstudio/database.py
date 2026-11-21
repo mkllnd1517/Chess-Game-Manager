@@ -46,6 +46,9 @@ CREATE TABLE IF NOT EXISTS pos_index (
 CREATE TABLE IF NOT EXISTS pgn_sources (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     label TEXT NOT NULL,
+    -- Las fuentes de repertorio indexan todas sus variantes; las partidas y
+    -- preparaciones conservan el índice de línea principal habitual.
+    include_variations INTEGER NOT NULL DEFAULT 0,
     imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS pgn_source_games (
@@ -149,6 +152,7 @@ class PgnSource:
     id: int
     label: str
     game_count: int
+    include_variations: bool
     imported_at: str
 
 
@@ -180,7 +184,18 @@ class ChessDatabase:
         self.conn.execute("PRAGMA cache_size = -16000")
         self.conn.execute("PRAGMA busy_timeout = 5000")
         self.conn.executescript(SCHEMA)
+        self._migrate_schema()
         self.conn.commit()
+
+    def _migrate_schema(self) -> None:
+        """Completa cambios aditivos del esquema en bases ya existentes."""
+        source_columns = {
+            str(row["name"]) for row in self.conn.execute("PRAGMA table_info(pgn_sources)").fetchall()
+        }
+        if "include_variations" not in source_columns:
+            self.conn.execute(
+                "ALTER TABLE pgn_sources ADD COLUMN include_variations INTEGER NOT NULL DEFAULT 0"
+            )
 
     def close(self) -> None:
         try:
@@ -195,8 +210,13 @@ class ChessDatabase:
     def game_count(self) -> int:
         return self.conn.execute("SELECT COUNT(*) FROM games").fetchone()[0]
 
-    def _insert_game(self, game: chess.pgn.Game) -> int:
-        """Inserta partida + índice de posiciones SIN hacer commit."""
+    def _insert_game(self, game: chess.pgn.Game, include_variations: bool = False) -> int:
+        """Inserta una partida y su índice de posiciones sin hacer commit.
+
+        Las partidas jugadas usan únicamente la línea principal. Un repertorio
+        de aperturas, en cambio, necesita que cada variante PGN sea navegable;
+        por eso puede solicitar un índice de árbol completo.
+        """
         headers = {k: str(v) for k, v in dict(game.headers).items()}
         cur = self.conn.execute(
             "INSERT INTO games (white, black, event, site, date, round, result, eco, movetext, headers)"
@@ -215,7 +235,7 @@ class ChessDatabase:
             ),
         )
         game_id = int(cur.lastrowid)
-        self._index_game(game_id, game)
+        self._index_game(game_id, game, include_variations=include_variations)
         return game_id
 
     def add_game(self, game: chess.pgn.Game) -> int:
@@ -223,25 +243,68 @@ class ChessDatabase:
         self.conn.commit()
         return game_id
 
-    def _index_game(self, game_id: int, game: chess.pgn.Game) -> None:
-        """Indexa la línea principal (las variantes de análisis no cuentan
-        como partidas jugadas y no deben inflar las estadísticas)."""
-        board = game.board()
-        node: chess.pgn.GameNode = game
-        ply = 0
+    def _index_game(
+        self,
+        game_id: int,
+        game: chess.pgn.Game,
+        include_variations: bool = False,
+    ) -> None:
+        """Indexa una partida para búsquedas y estadísticas de aperturas.
+
+        La colección normal y la preparación de rival representan partidas
+        reales: solo cuentan su línea principal. Los PGN de repertorio suelen
+        ser árboles de análisis, por lo que ``include_variations`` registra
+        todas las aristas del árbol de forma iterativa. Así el explorador puede
+        mostrar, por ejemplo, todas las respuestas a ``1.e4`` sin confundirlas
+        con una única partida principal.
+        """
         result = game.headers.get("Result", "*")
         rows: list[tuple] = []
-        while node.variations:
-            node = node.variations[0]
-            move = node.move
-            key = poskey(board)
-            try:
-                san = board.san(move)
-            except Exception:
-                san = board.uci(move)
-            rows.append((game_id, ply, key, san, result))
-            board.push(move)
-            ply += 1
+        if include_variations:
+            # (nodo padre, tablero antes de sus continuaciones, profundidad).
+            # Evitamos recursión para que árboles PGN profundos sigan siendo
+            # importables y navegables sin agotar el límite de Python.
+            stack: list[tuple[chess.pgn.GameNode, chess.Board, int]] = [
+                (game, game.board(), 0)
+            ]
+            while stack:
+                node, board, ply = stack.pop()
+                for child in node.variations:
+                    move = child.move
+                    if move is None:
+                        continue
+                    key = poskey(board)
+                    try:
+                        san = board.san(move)
+                    except Exception:
+                        try:
+                            san = board.uci(move)
+                        except Exception:
+                            continue
+                    rows.append((game_id, ply, key, san, result))
+                    next_board = board.copy(stack=False)
+                    try:
+                        next_board.push(move)
+                    except Exception:
+                        continue
+                    stack.append((child, next_board, ply + 1))
+        else:
+            board = game.board()
+            node: chess.pgn.GameNode = game
+            ply = 0
+            while node.variations:
+                node = node.variations[0]
+                move = node.move
+                if move is None:
+                    break
+                key = poskey(board)
+                try:
+                    san = board.san(move)
+                except Exception:
+                    san = board.uci(move)
+                rows.append((game_id, ply, key, san, result))
+                board.push(move)
+                ply += 1
         if rows:
             self.conn.executemany(
                 "INSERT INTO pos_index (game_id, ply, poskey, next_san, result) VALUES (?,?,?,?,?)",
@@ -285,7 +348,7 @@ class ChessDatabase:
     # ------------------------------------------------------------------ #
     # Fuentes PGN (usadas por los repertorios)
     # ------------------------------------------------------------------ #
-    def create_source(self, label: str) -> int:
+    def create_source(self, label: str, include_variations: bool = False) -> int:
         """Registra una fuente PGN y devuelve su identificador.
 
         ``label`` es texto de interfaz; se acota para evitar que un nombre de
@@ -294,13 +357,16 @@ class ChessDatabase:
         carpetas distintas siguen siendo fuentes independientes y eliminables.
         """
         clean_label = str(label).strip().replace("\x00", " ")[:255] or "PGN sin nombre"
-        cursor = self.conn.execute("INSERT INTO pgn_sources (label) VALUES (?)", (clean_label,))
+        cursor = self.conn.execute(
+            "INSERT INTO pgn_sources (label, include_variations) VALUES (?, ?)",
+            (clean_label, int(include_variations)),
+        )
         return int(cursor.lastrowid)
 
     def list_sources(self) -> list[PgnSource]:
         """Devuelve los PGN importados y su número de partidas, más recientes primero."""
         rows = self.conn.execute(
-            "SELECT s.id, s.label, s.imported_at, COUNT(m.game_id) AS game_count "
+            "SELECT s.id, s.label, s.include_variations, s.imported_at, COUNT(m.game_id) AS game_count "
             "FROM pgn_sources s LEFT JOIN pgn_source_games m ON m.source_id = s.id "
             "GROUP BY s.id ORDER BY s.id DESC"
         ).fetchall()
@@ -309,6 +375,7 @@ class ChessDatabase:
                 id=int(row["id"]),
                 label=str(row["label"]),
                 game_count=int(row["game_count"]),
+                include_variations=bool(row["include_variations"]),
                 imported_at=str(row["imported_at"]),
             )
             for row in rows
@@ -337,6 +404,35 @@ class ChessDatabase:
         self.conn.commit()
         return len(ids)
 
+    def enable_variation_index_for_sources(self) -> int:
+        """Reindexa fuentes PGN antiguas como árboles de repertorio.
+
+        Las primeras versiones del panel de repertorios usaban el índice de
+        línea principal de las partidas. Esta migración es idempotente y se
+        limita a fuentes marcadas como no indexadas por variantes; las bases
+        normales, sin fuentes de repertorio, no se modifican.
+        """
+        rows = self.conn.execute(
+            "SELECT DISTINCT g.id, g.movetext, g.headers "
+            "FROM games g JOIN pgn_source_games m ON m.game_id = g.id "
+            "JOIN pgn_sources s ON s.id = m.source_id "
+            "WHERE s.include_variations = 0"
+        ).fetchall()
+        if not rows:
+            return 0
+        converted = 0
+        for row in rows:
+            game = parse_stored_game(str(row["movetext"]), json.loads(row["headers"]))
+            if game is None:
+                continue
+            game_id = int(row["id"])
+            self.conn.execute("DELETE FROM pos_index WHERE game_id = ?", (game_id,))
+            self._index_game(game_id, game, include_variations=True)
+            converted += 1
+        self.conn.execute("UPDATE pgn_sources SET include_variations = 1 WHERE include_variations = 0")
+        self.conn.commit()
+        return converted
+
     def import_pgn(
         self,
         path: Path | str,
@@ -344,6 +440,7 @@ class ChessDatabase:
         cancel=None,
         player_counts: collections.Counter | None = None,
         source_label: str | None = None,
+        include_variations: bool = False,
     ) -> tuple[int, int]:
         """Importa un PGN por lotes.
 
@@ -352,6 +449,9 @@ class ChessDatabase:
         ``player_counts`` (Counter) acumula partidas por jugador si se pasa.
         Si se indica ``source_label``, cada partida queda vinculada al archivo
         importado y puede retirarse después mediante :meth:`remove_source`.
+        ``include_variations`` indexa todas las ramas PGN y se reserva para
+        repertorios de aperturas; las partidas normales siguen usando solo la
+        línea principal.
         """
         path = Path(path)
         size = max(1, path.stat().st_size)
@@ -362,7 +462,7 @@ class ChessDatabase:
         source_id: int | None = None
         with open(path, "r", encoding="utf-8", errors="replace") as handle:
             if source_label is not None:
-                source_id = self.create_source(source_label)
+                source_id = self.create_source(source_label, include_variations=include_variations)
             while True:
                 if cancel is not None and cancel.is_set():
                     break
@@ -393,7 +493,7 @@ class ChessDatabase:
                     skipped += 1
                     continue
                 try:
-                    game_id = self._insert_game(game)
+                    game_id = self._insert_game(game, include_variations=include_variations)
                     if source_id is not None:
                         self.conn.execute(
                             "INSERT INTO pgn_source_games (source_id, game_id) VALUES (?, ?)",

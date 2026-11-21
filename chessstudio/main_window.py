@@ -1,5 +1,7 @@
-"""Ventana principal de ChessStudio: pestañas de partidas, bases, explorador,
-motor y preparación de rival. Sin referencias a productos de terceros.
+"""Ventana principal de Chess Games Manager.
+
+Coordina pestañas de partidas, bases locales, explorador de aperturas, motor,
+repertorios y preparación de rival.
 """
 from __future__ import annotations
 
@@ -35,7 +37,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from chessstudio import __version__
+from chessstudio import APP_NAME, __version__
 from chessstudio.app_paths import app_documents_directory, legal_document_path
 from chessstudio.board_widget import BoardWidget
 from chessstudio.database import (
@@ -63,9 +65,14 @@ from chessstudio.workers import (
 
 
 class GamePropertiesDialog(QDialog):
-    def __init__(self, headers: dict, parent: QWidget | None = None):
+    def __init__(
+        self,
+        headers: dict,
+        parent: QWidget | None = None,
+        for_export: bool = False,
+    ):
         super().__init__(parent)
-        self.setWindowTitle("Propiedades de la partida")
+        self.setWindowTitle("Propiedades del PGN a exportar" if for_export else "Propiedades de la partida")
         self.setMinimumWidth(360)
         self.fields: dict[str, QLineEdit] = {}
         form = QFormLayout()
@@ -82,6 +89,8 @@ class GamePropertiesDialog(QDialog):
                 self.fields[header] = edit
                 form.addRow(f"{header}:", edit)
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        if for_export:
+            buttons.button(QDialogButtonBox.Ok).setText("Exportar")
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout = QVBoxLayout(self)
@@ -105,9 +114,9 @@ class LegalNoticesDialog(QDialog):
         summary = QTextBrowser()
         summary.setOpenExternalLinks(True)
         summary.setHtml(
-            "<h2>ChessStudio — Chess Game Manager</h2>"
+            "<h2>Chess Games Manager</h2>"
             f"<p>Versión <b>{__version__}</b></p>"
-            "<p>Copyright © 2026 Chess Game Manager contributors.</p>"
+            "<p>Copyright © 2026 Chess Games Manager contributors.</p>"
             "<p>Este programa es software libre: puedes redistribuirlo o "
             "modificarlo conforme a la <b>GNU General Public License v3 o "
             "posterior (GPL-3.0-or-later)</b>.</p>"
@@ -149,6 +158,49 @@ class LegalNoticesDialog(QDialog):
             )
         viewer.setPlainText(text)
         return viewer
+
+
+class QuickHelpDialog(QDialog):
+    """Guía breve, revisada y legible de las funciones principales."""
+
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.setWindowTitle("Ayuda de Chess Games Manager")
+        self.resize(720, 520)
+
+        guide = QTextBrowser()
+        guide.setOpenExternalLinks(True)
+        guide.setHtml(
+            "<h2>Guía rápida</h2>"
+            "<h3>Partidas y bases</h3>"
+            "<p>Abre o crea una base desde <b>Archivo</b>. Puedes importar PGN, "
+            "abrirlos sin importarlos y guardar una partida editada en la base. "
+            "Al exportar, primero eliges el destino y después revisas las "
+            "cabeceras PGN, como evento, blancas, negras y resultado.</p>"
+            "<h3>Repertorios</h3>"
+            "<p>En <b>Ver → Repertorios</b> crea perfiles con bases separadas "
+            "para blancas y negras. Cada PGN se puede quitar de forma "
+            "independiente. Los PGN de aperturas incluyen todas sus variantes "
+            "en el explorador, no solo la línea principal.</p>"
+            "<h3>Comparar con un rival</h3>"
+            "<p>Activa un repertorio y carga una preparación de rival. En "
+            "<b>Aperturas</b>, el modo de comparación indica la presencia de "
+            "cada jugada: <span style='color:#1565c0'>azul</span> para solo "
+            "repertorio, <span style='color:#2e7d32'>verde</span> para solo "
+            "rival y <span style='color:#9a7600'>amarillo</span> para ambas.</p>"
+            "<h3>Motor</h3>"
+            "<p>Selecciona un motor UCI instalado por ti. Las sugerencias "
+            "MultiPV se muestran en bloques separados y sus variantes incluyen "
+            "números de jugada para facilitar su lectura.</p>"
+            "<p>Haz doble clic sobre una jugada del explorador para reproducirla "
+            "en el tablero.</p>"
+        )
+        close = QDialogButtonBox(QDialogButtonBox.Close)
+        close.rejected.connect(self.reject)
+        close.accepted.connect(self.accept)
+        layout = QVBoxLayout(self)
+        layout.addWidget(guide)
+        layout.addWidget(close)
 
 
 class VariationChooserDialog(QDialog):
@@ -367,7 +419,7 @@ class GameWindow(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.settings = QSettings("ChessStudio", "ChessStudio")
+        self.settings = QSettings(APP_NAME, APP_NAME)
         self.db: ChessDatabase | None = None
         self._import_thread = None
         self._import_worker = None
@@ -403,7 +455,7 @@ class MainWindow(QMainWindow):
         self._build_docks()
         self._build_actions()
         self._build_menus()
-        self.setWindowTitle("ChessStudio")
+        self.setWindowTitle(APP_NAME)
         self.resize(1280, 820)
 
         geometry = self.settings.value("window/geometry")
@@ -514,9 +566,11 @@ class MainWindow(QMainWindow):
         self.act_close.setShortcut(QKeySequence.Quit)
         self.act_close.triggered.connect(self.close)
 
+        self.act_help = QAction("Guía rápida...", self)
+        self.act_help.triggered.connect(self.show_help)
         self.act_legal = QAction("Licencia y avisos de terceros...", self)
         self.act_legal.triggered.connect(self.show_legal_notices)
-        self.act_about = QAction("Acerca de ChessStudio", self)
+        self.act_about = QAction(f"Acerca de {APP_NAME}", self)
         self.act_about.triggered.connect(self.show_about)
 
         toolbar = QToolBar("Principal")
@@ -563,9 +617,14 @@ class MainWindow(QMainWindow):
         del_shortcut.activated.connect(self.delete_selected_games)
 
         menu_help = self.menuBar().addMenu("Ayuda")
+        menu_help.addAction(self.act_help)
+        menu_help.addSeparator()
         menu_help.addAction(self.act_legal)
         menu_help.addSeparator()
         menu_help.addAction(self.act_about)
+
+    def show_help(self) -> None:
+        QuickHelpDialog(self).exec()
 
     def show_legal_notices(self) -> None:
         LegalNoticesDialog(self).exec()
@@ -573,8 +632,8 @@ class MainWindow(QMainWindow):
     def show_about(self) -> None:
         QMessageBox.about(
             self,
-            "Acerca de ChessStudio",
-            f"<h2>ChessStudio</h2><p>Chess Game Manager · versión {__version__}</p>"
+            f"Acerca de {APP_NAME}",
+            f"<h2>{APP_NAME}</h2><p>Versión {__version__}</p>"
             "<p>Organiza, estudia y analiza tus partidas de ajedrez.</p>"
             "<p>Software libre bajo GPL-3.0-or-later. Consulta Ayuda → "
             "Licencia y avisos de terceros para el texto completo y la "
@@ -624,12 +683,14 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"Base abierta: {path} ({self.db.game_count()} partidas)")
 
     def open_database_dialog(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "Abrir base", "", "Bases ChessStudio (*.csdb);;Todos (*)")
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Abrir base", "", "Bases Chess Games Manager (*.csdb);;Todos (*)"
+        )
         if path:
             self.open_database(path)
 
     def new_database(self) -> None:
-        path, _ = QFileDialog.getSaveFileName(self, "Nueva base", "", "Bases ChessStudio (*.csdb)")
+        path, _ = QFileDialog.getSaveFileName(self, "Nueva base", "", "Bases Chess Games Manager (*.csdb)")
         if path:
             if not path.lower().endswith(".csdb"):
                 path += ".csdb"
@@ -638,7 +699,7 @@ class MainWindow(QMainWindow):
     def _update_title(self) -> None:
         name = self.db.path.name if self.db is not None else "sin base"
         count = self.db.game_count() if self.db is not None else 0
-        self.setWindowTitle(f"ChessStudio - {name} ({count} partidas)")
+        self.setWindowTitle(f"{APP_NAME} - {name} ({count} partidas)")
 
     def refresh_game_list(self, rows: list[GameRow] | None = None) -> None:
         if self.db is None:
@@ -787,6 +848,15 @@ class MainWindow(QMainWindow):
             return
         if not path.lower().endswith(".pgn"):
             path += ".pgn"
+        # Elegir destino y revisar cabeceras forman parte del mismo flujo: así
+        # el PGN exportado lleva el evento, jugadores y resultado que el
+        # usuario quiere compartir, incluso si todavía no guarda esos cambios
+        # en su base principal.
+        properties = GamePropertiesDialog(dict(window.doc.game.headers), self, for_export=True)
+        if properties.exec() != QDialog.Accepted:
+            return
+        window.doc.apply_headers(properties.values())
+        self._rename_tab(window, window.doc.title())
         target = Path(path)
         tmp = target.with_name(target.name + ".tmp")
         try:

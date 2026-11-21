@@ -1,14 +1,14 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=ChessStudio
+Name=Chess Games Manager
 GenericName=Gestor de partidas de ajedrez
 Comment=Organiza, estudia y analiza partidas PGN
-Exec=chessstudio %f
-Icon=io.github.mkllnd1517.ChessStudio
+Exec=chess-games-manager %f
+Icon=io.github.mkllnd1517.ChessGamesManager
 Terminal=false
 Categories=Game;BoardGame;Education;
 Keywords=chess;ajedrez;PGN;UCI;opening;aperturas;
 MimeType=application/x-chess-pgn;
 StartupNotify=true
-StartupWMClass=ChessStudio
+StartupWMClass=ChessGamesManager

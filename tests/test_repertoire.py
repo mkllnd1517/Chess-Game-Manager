@@ -10,7 +10,7 @@ import pytest
 from PySide6.QtWidgets import QApplication
 
 from chessstudio.database import ChessDatabase
-from chessstudio.opening_tree import OpeningTreeWidget
+from chessstudio.opening_tree import OpeningTreeWidget, PRIMARY_ONLY_BG, REF_BG
 from chessstudio.repertoire_store import RepertoireError, RepertoireLibrary
 
 
@@ -58,11 +58,14 @@ def test_named_repertoires_keep_colors_and_sources_separate(tmp_path):
         manual.headers["Result"] = "*"
         white.add_game(manual)
 
-        imported, skipped = white.import_pgn(source, source_label=source.name)
+        imported, skipped = white.import_pgn(
+            source, source_label=source.name, include_variations=True
+        )
         assert (imported, skipped) == (1, 0)
         source_row = white.list_sources()[0]
         assert source_row.label == "italiana.pgn"
         assert source_row.game_count == 1
+        assert source_row.include_variations
         assert white.game_count() == 2
         assert [stat.san for stat in white.opening_stats(chess.STARTING_FEN)] == ["e4"]
 
@@ -79,6 +82,45 @@ def test_named_repertoires_keep_colors_and_sources_separate(tmp_path):
     assert renamed.name == "Ataque italiano"
     library.delete(d4.identifier)
     assert [profile.name for profile in library.list()] == ["Ataque italiano"]
+
+
+def test_repertoire_indexes_every_pgn_variation(tmp_path):
+    """Un PGN de estudio debe ofrecer todas sus ramas, no solo la principal."""
+    game = chess.pgn.Game()
+    game.headers["Result"] = "*"
+    board = game.board()
+    e4 = game.add_variation(board.parse_san("e4"))
+    d4 = game.add_variation(board.parse_san("d4"))
+    board.push(e4.move)
+    e4.add_variation(board.parse_san("e5"))
+    e4.add_variation(board.parse_san("c5"))
+    # Una rama más profunda también debe ser indexada.
+    c5_board = game.board()
+    c5_board.push(e4.move)
+    c5 = e4.variations[1]
+    c5_board.push(c5.move)
+    c5.add_variation(c5_board.parse_san("Nf3"))
+
+    pgn = tmp_path / "arbol.pgn"
+    pgn.write_text(str(game), encoding="utf-8")
+    db = ChessDatabase(tmp_path / "repertorio.csdb")
+    try:
+        # Simula un repertorio de una versión anterior, que solo indexaba su
+        # línea principal. Al abrirlo hoy debe migrar a árbol completo.
+        assert db.import_pgn(pgn, source_label=pgn.name) == (1, 0)
+        assert {stat.san for stat in db.opening_stats(chess.STARTING_FEN)} == {"e4"}
+        assert db.enable_variation_index_for_sources() == 1
+        root_moves = {stat.san for stat in db.opening_stats(chess.STARTING_FEN)}
+        assert root_moves == {"e4", "d4"}
+        after_e4 = chess.Board()
+        after_e4.push_san("e4")
+        replies = {stat.san for stat in db.opening_stats(after_e4.fen())}
+        assert replies == {"e5", "c5"}
+        after_c5 = after_e4.copy()
+        after_c5.push_san("c5")
+        assert {stat.san for stat in db.opening_stats(after_c5.fen())} == {"Nf3"}
+    finally:
+        db.close()
 
 
 def _add_game(db: ChessDatabase, moves: list[str], white: str, black: str) -> None:
@@ -109,6 +151,23 @@ def test_explorer_compares_repertoire_with_rival(qapp, tmp_path):
         moves = [tree.table.item(row, 0).text() for row in range(tree.table.rowCount())]
         assert moves == ["e4"]
         assert tree.table.item(0, 0).toolTip()
+        assert tree.table.item(0, 8).text() == "Repertorio y rival"
+
+        # Tras 1.e4 cada fuente aporta una respuesta distinta. La columna y
+        # el color de la jugada deben dejar inequívoca su procedencia.
+        after_e4 = chess.Board()
+        after_e4.push_san("e4")
+        tree.set_position(after_e4.fen())
+        presence_by_move = {
+            tree.table.item(row, 0).text(): tree.table.item(row, 8).text()
+            for row in range(tree.table.rowCount())
+        }
+        assert presence_by_move == {"e5": "Solo repertorio", "c5": "Solo rival"}
+        colors_by_move = {
+            tree.table.item(row, 0).text(): tree.table.item(row, 0).background().color()
+            for row in range(tree.table.rowCount())
+        }
+        assert colors_by_move == {"e5": PRIMARY_ONLY_BG, "c5": REF_BG}
     finally:
         repertoire.close()
         rival.close()

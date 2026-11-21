@@ -1,6 +1,6 @@
 # Avisos de terceros y distribución
 
-> **Resumen:** ChessStudio — Chess Game Manager se publica como
+> **Resumen:** Chess Games Manager se publica como
 > **GPL-3.0-or-later**. El texto completo está en [`LICENSE`](LICENSE) y el
 > aviso de copyright y garantía de esta distribución está en [`NOTICE`](NOTICE).
 >
@@ -14,7 +14,7 @@
 
 | Componente | Licencia declarada por el proyecto | Uso | Obligación práctica al publicar un binario |
 |---|---|---|---|
-| [`python-chess`](https://github.com/niklasf/python-chess) (paquete PyPI `chess`) | GPL-3.0-or-later | Reglas, PGN y protocolo UCI. | Distribuir ChessStudio como GPL-3.0-or-later, conservar el aviso de `python-chess` y ofrecer el código fuente correspondiente. |
+| [`python-chess`](https://github.com/niklasf/python-chess) (paquete PyPI `chess`) | GPL-3.0-or-later | Reglas, PGN y protocolo UCI. | Distribuir Chess Games Manager como GPL-3.0-or-later, conservar el aviso de `python-chess` y ofrecer el código fuente correspondiente. |
 | [PySide6 / Qt for Python](https://doc.qt.io/qtforpython-6/) (`PySide6-Essentials` y `shiboken6`) | LGPL-3.0-only **o** GPL-2.0-only/GPL-3.0-only, según el componente y la modalidad elegida; Qt también ofrece opciones comerciales. | Interfaz Qt, SVG, red y widgets. | Para la distribución comunitaria basada en las ruedas LGPL de Qt, conservar los textos y avisos de Qt/PySide6 que acompañen a la versión empaquetada, usar enlace dinámico cuando corresponda y cumplir las condiciones LGPL aplicables. Una alternativa GPL o comercial cambia las obligaciones. |
 | [`keyring`](https://github.com/jaraco/keyring) | MIT | Acceso opcional al llavero del sistema para el token de Lichess. | Conservar su aviso MIT si se redistribuye la biblioteca. La aplicación funciona con su almacenamiento alternativo si no está disponible. |
 
@@ -33,7 +33,7 @@ conserva la documentación contractual correspondiente.
 | Recurso | Autoría / procedencia | Licencia | Archivos y cumplimiento |
 |---|---|---|---|
 | Piezas SVG `cburnett` | Colin M. L. Burnett; copias distribuidas por Lichess. | GPL-2.0-or-later. | Las 12 piezas están en `chessstudio/pieces/`; se conservan [`LICENSE.txt`](chessstudio/pieces/LICENSE.txt) y [`GPL-2.0.txt`](chessstudio/pieces/GPL-2.0.txt). Se usan sin modificar. La opción «o posterior» permite su redistribución bajo GPL-3.0-or-later junto con la aplicación. |
-| Iconos `chessstudio.svg` y `chessstudio.ico` | Chess Game Manager contributors, 2026. | GPL-3.0-or-later. | El SVG está en `chessstudio/assets/`; el ICO para el ejecutable e instalador de Windows está en `packaging/windows/`. El SVG declara su SPDX y ambos se cubren por [`NOTICE`](NOTICE). |
+| Iconos de la aplicación | Chess Games Manager contributors, 2026. | GPL-3.0-or-later. | El SVG está en `chessstudio/assets/`; el ICO para el ejecutable e instalador de Windows está en `packaging/windows/`. El SVG declara su SPDX y ambos se cubren por [`NOTICE`](NOTICE). |
 
 Referencia de las piezas cburnett: [COPYING de Lichess](https://github.com/lichess-org/lila/blob/master/COPYING.md) y [directorio original](https://github.com/lichess-org/lila/tree/master/public/piece/cburnett).
 
@@ -41,8 +41,8 @@ Referencia de las piezas cburnett: [COPYING de Lichess](https://github.com/liche
 
 | Herramienta | Licencia publicada | Papel |
 |---|---|---|
-| [PyInstaller](https://pyinstaller.org/) | GPL-2.0-or-later con excepción para el *bootloader*. | Produce la carpeta ejecutable `dist/ChessStudio`. La excepción permite distribuir la salida sin que PyInstaller imponga por sí mismo GPL a todo el resultado; las dependencias y el código de ChessStudio siguen determinando las obligaciones reales. Conserva los avisos que PyInstaller incorpore en una publicación binaria. |
-| [Inno Setup 6](https://jrsoftware.org/isinfo.php) | Consulta su licencia de distribución vigente. | Compila el instalador de Windows definido en `packaging/windows/ChessStudio.iss`. No se incluye como dependencia de ejecución del repositorio. |
+| [PyInstaller](https://pyinstaller.org/) | GPL-2.0-or-later con excepción para el *bootloader*. | Produce la carpeta ejecutable `dist/ChessGamesManager`. La excepción permite distribuir la salida sin que PyInstaller imponga por sí mismo GPL a todo el resultado; las dependencias y el código de Chess Games Manager siguen determinando las obligaciones reales. Conserva los avisos que PyInstaller incorpore en una publicación binaria. |
+| [Inno Setup 6](https://jrsoftware.org/isinfo.php) | Consulta su licencia de distribución vigente. | Compila el instalador de Windows definido en `packaging/windows/ChessGamesManager.iss`. No se incluye como dependencia de ejecución del repositorio. |
 | [pytest](https://github.com/pytest-dev/pytest) | MIT | Ejecuta las pruebas; solo se instala para desarrollo. |
 | setuptools | MIT | Construye el paquete Python. No se redistribuye como parte de la aplicación final. |
 
@@ -50,7 +50,7 @@ Referencia de las piezas cburnett: [COPYING de Lichess](https://github.com/liche
 
 ### Motores UCI
 
-ChessStudio **no incluye, descarga, aloja ni redistribuye** Stockfish ni ningún
+Chess Games Manager **no incluye, descarga, aloja ni redistribuye** Stockfish ni ningún
 otro motor UCI. La aplicación solo permite seleccionar un ejecutable que el
 usuario ya haya obtenido. Si en el futuro se distribuye un motor junto a la
 aplicación, habrá que añadir su código fuente, licencia, avisos y cualquier
@@ -69,7 +69,7 @@ de su API. La integración no implica patrocinio, afiliación ni aprobación.
 
 Las partidas, bases, comentarios, repertorios y archivos PGN que se importan
 permanecen localmente en el equipo salvo que la persona usuaria decida
-exportarlos o utilizar un servicio externo. ChessStudio no concede derechos
+exportarlos o utilizar un servicio externo. Chess Games Manager no concede derechos
 sobre esos datos ni verifica su procedencia: quien importe, comparta o publique
 un PGN debe contar con los permisos necesarios y respetar las condiciones de
 la fuente de la que lo obtuvo. Los repertorios guardan únicamente sus bases
