@@ -1,6 +1,6 @@
 """Lanzador de compatibilidad para ejecutar desde un clon del repositorio.
 
-Las instalaciones normales usan el comando ``chessstudio`` o el acceso directo
+Las instalaciones normales usan el comando ``chess-games-manager`` o el acceso directo
 creado por el instalador; no es necesario abrir ni ejecutar este archivo.
 """
 from chessstudio.app import main

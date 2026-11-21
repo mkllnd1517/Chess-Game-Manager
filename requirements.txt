@@ -1,4 +1,4 @@
-# Dependencias necesarias para ejecutar Chess Game Manager desde el código.
+# Dependencias necesarias para ejecutar Chess Games Manager desde el código.
 #
 # Se utiliza el paquete Essentials de Qt for Python: incluye QtCore, QtGui,
 # QtWidgets, QtNetwork y QtSvg, que son los únicos módulos Qt importados por

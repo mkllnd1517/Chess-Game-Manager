@@ -22,6 +22,21 @@ from chessstudio.pgn_utils import (
 SAMPLE = Path(__file__).parent / "sample_arrows.pgn"
 
 
+def test_app_documents_directory_migrates_legacy_data(monkeypatch, tmp_path):
+    from chessstudio import APP_NAME
+    from chessstudio import app_paths
+
+    legacy = tmp_path / "ChessStudio"
+    legacy.mkdir()
+    (legacy / "default.csdb").write_text("datos", encoding="utf-8")
+    monkeypatch.setattr(app_paths, "documents_directory", lambda: tmp_path)
+
+    target = app_paths.app_documents_directory()
+    assert target == tmp_path / APP_NAME
+    assert (target / "default.csdb").read_text(encoding="utf-8") == "datos"
+    assert not legacy.exists()
+
+
 def read_sample() -> chess.pgn.Game:
     with open(SAMPLE, encoding="utf-8") as handle:
         return chess.pgn.read_game(handle)

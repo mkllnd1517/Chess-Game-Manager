@@ -7,7 +7,8 @@
    (columnas verdes) en el panel "Aperturas", y se puede saltar a él con un
    clic. También se listan las partidas del rival para abrirlas directamente.
 
-La base de preparación se guarda en Documentos/ChessStudio/prep y conserva
+La base de preparación se guarda en la carpeta de documentos de Chess Games
+Manager, dentro de ``prep``, y conserva
 todas las partidas del PGN; el filtro por rival/color se aplica en las
 consultas, así que cambiar de rival o de color es instantáneo.
 """
@@ -315,7 +316,7 @@ class OpponentPrepWidget(QWidget):
     def _open_existing(self) -> None:
         if self._thread is not None:
             return
-        path, _ = QFileDialog.getOpenFileName(self, "Abrir base de preparación", str(PREP_DIR), "Bases ChessStudio (*.csdb);;Todos (*)")
+        path, _ = QFileDialog.getOpenFileName(self, "Abrir base de preparación", str(PREP_DIR), "Bases Chess Games Manager (*.csdb);;Todos (*)")
         if not path:
             return
         self.prepDatabaseReady.emit(None, "", "both")

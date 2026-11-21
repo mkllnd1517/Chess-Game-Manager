@@ -15,7 +15,7 @@ from unittest.mock import patch
 import chess
 import chess.pgn
 import pytest
-from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
 
 from chessstudio.database import ChessDatabase, parse_stored_game
 from chessstudio.game_model import GameDoc
@@ -187,10 +187,17 @@ def test_export_current_game_only(qapp, tmp_path):
     gw.doc.goto_next()
     gw.doc.set_comment("comentario de prueba [%cal Gg1f3]")
     out = tmp_path / "una.pgn"
-    with patch.object(QFileDialog, "getSaveFileName", return_value=(str(out), "")):
+    from chessstudio.main_window import GamePropertiesDialog
+    exported_headers = dict(gw.doc.game.headers)
+    exported_headers.update({"Event": "Evento exportado", "White": "Blancas exportadas"})
+    with patch.object(QFileDialog, "getSaveFileName", return_value=(str(out), "")), \
+         patch.object(GamePropertiesDialog, "exec", return_value=QDialog.Accepted), \
+         patch.object(GamePropertiesDialog, "values", return_value=exported_headers):
         window.export_pgn()
     text = out.read_text(encoding="utf-8")
     assert text.count("[Event ") == 1, "Debe exportarse solo la partida abierta"
+    assert '[Event "Evento exportado"]' in text
+    assert '[White "Blancas exportadas"]' in text
     assert "comentario de prueba" in text
     assert "[%cal Gg1f3]" in text
     assert not out.with_name(out.name + ".tmp").exists()

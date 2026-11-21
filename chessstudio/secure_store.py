@@ -18,7 +18,9 @@ from __future__ import annotations
 
 from PySide6.QtCore import QSettings
 
-SERVICE = "ChessStudio"
+from chessstudio import APP_NAME
+
+SERVICE = APP_NAME
 ACCOUNT = "lichess_token"
 _SETTINGS_KEY = "lichess/token"
 

@@ -35,6 +35,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from chessstudio import APP_NAME
+
 MONO = QFont("Consolas", 9)
 if sys.platform != "win32":
     MONO = QFont("Monospace", 9)
@@ -50,6 +52,28 @@ def format_score(score: chess.engine.PovScore) -> str:
     if value is None:
         return "?"
     return f"{value / 100:+.2f}"
+
+
+def format_pv(board: chess.Board, moves: list[chess.Move], limit: int = 18) -> str:
+    """Convierte una variante principal UCI en SAN con números de jugada.
+
+    Los números aportan contexto al analizar una posición intermedia: una PV
+    que empieza con negras se muestra como ``12... Ac5`` y no como una lista
+    ambigua de SAN. La copia local evita modificar el tablero que sigue la UI.
+    """
+    temp = board.copy()
+    tokens: list[str] = []
+    for index, move in enumerate(moves[:limit]):
+        try:
+            if temp.turn == chess.WHITE:
+                tokens.append(f"{temp.fullmove_number}.")
+            elif index == 0:
+                tokens.append(f"{temp.fullmove_number}...")
+            tokens.append(temp.san(move))
+            temp.push(move)
+        except Exception:
+            break
+    return " ".join(tokens) or "(sin línea)"
 
 
 class EngineWorker(QObject):
@@ -208,14 +232,7 @@ class EngineWorker(QObject):
         for rank in sorted(lines_by_rank):
             info = lines_by_rank[rank]
             pv = info.get("pv") or []
-            san_moves = []
-            temp = board.copy()
-            for move in pv[:18]:
-                try:
-                    san_moves.append(temp.san(move))
-                    temp.push(move)
-                except Exception:
-                    break
+            pv_text = format_pv(board, pv)
             score = info.get("score")
             score_str = format_score(score) if score is not None else "?"
             depth = int(info.get("depth", 0))
@@ -224,7 +241,7 @@ class EngineWorker(QObject):
             max_seldepth = max(max_seldepth, seldepth)
             lines.append({
                 "rank": rank, "score": score_str, "depth": depth,
-                "seldepth": seldepth, "pv": " ".join(san_moves) or "(sin línea)",
+                "seldepth": seldepth, "pv": pv_text,
             })
             if rank == 1:
                 self.scoreUpdate.emit(score_str)
@@ -236,7 +253,7 @@ class EngineWorker(QObject):
 class EnginePanel(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
-        self._settings = QSettings("ChessStudio", "ChessStudio")
+        self._settings = QSettings(APP_NAME, APP_NAME)
         self.worker = EngineWorker()
         self._engine_name = ""
         self.worker.linesReady.connect(self._on_lines)
@@ -298,7 +315,13 @@ class EnginePanel(QWidget):
         self.output = QPlainTextEdit()
         self.output.setReadOnly(True)
         self.output.setFont(MONO)
-        self.output.setPlaceholderText("Las líneas de análisis del motor aparecerán aquí.")
+        self.output.setLineWrapMode(QPlainTextEdit.WidgetWidth)
+        self.output.setPlaceholderText(
+            "Las recomendaciones del motor aparecerán aquí, separadas por variante."
+        )
+        self.output.setToolTip(
+            "Cada bloque es una recomendación distinta. La variante principal incluye números de jugada."
+        )
 
         layout = QVBoxLayout(self)
         layout.addLayout(form)
@@ -432,13 +455,18 @@ class EnginePanel(QWidget):
         if not lines:
             self.output.setPlainText("(fin de partida o sin líneas)")
             return
-        rows = []
+        blocks = []
         for line in lines:
-            depth_str = f"d{line['depth']}"
+            depth_str = f"Prof. {line['depth']}"
             if line.get("seldepth"):
-                depth_str += f"/{line['seldepth']}"
-            rows.append(f"{line['rank']}. {line['score']:>7}  {depth_str:<8}  {line['pv']}")
-        self.output.setPlainText("\n".join(rows))
+                depth_str += f" / Sel. {line['seldepth']}"
+            # Bloques separados en vez de una tabla compacta: se distinguen
+            # mejor las alternativas MultiPV y se leen bien en paneles estrechos.
+            blocks.append(
+                f"┌─ Recomendación {line['rank']}   Eval. {line['score']}   {depth_str}\n"
+                f"└─ {line['pv']}"
+            )
+        self.output.setPlainText("\n\n".join(blocks))
 
     def _on_depth_update(self, depth: int, seldepth: int) -> None:
         self.depth_label.setText(f"Profundidad: {depth}  Seldepth: {seldepth}")

@@ -15,7 +15,7 @@ del perfil de GitHub, incluyendo:
 
 - una descripción breve y el impacto esperado;
 - pasos reproducibles o una prueba de concepto mínima;
-- versión de ChessStudio, sistema operativo y versión de Python;
+- versión de Chess Games Manager, sistema operativo y versión de Python;
 - posibles mitigaciones, si las conoces.
 
 Evita adjuntar tokens reales, bases privadas, partidas no públicas o datos
@@ -28,5 +28,5 @@ Son especialmente relevantes: manejo de PGN no confiables, validación de URLs
 y tokens de Lichess, almacenamiento local de credenciales, consultas SQLite,
 empaquetado de escritorio y dependencias. Los problemas de seguridad de un
 motor UCI externo deben notificarse también al proyecto que distribuye dicho
-motor; ChessStudio no incluye ni ejecuta motores por su cuenta hasta que la
+motor; Chess Games Manager no incluye ni ejecuta motores por su cuenta hasta que la
 persona usuaria los selecciona.

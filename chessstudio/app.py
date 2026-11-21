@@ -1,8 +1,8 @@
-"""Punto de entrada de ChessStudio.
+"""Punto de entrada de Chess Games Manager.
 
-Este módulo es el punto de entrada instalado como ``chessstudio`` y el que
-usa el ejecutable de escritorio. ``main.py`` se mantiene únicamente como
-compatibilidad para quien ejecute una copia antigua desde el código fuente.
+Este módulo alimenta el comando instalado ``chess-games-manager`` y el
+ejecutable de escritorio. ``main.py`` se mantiene como lanzador de
+compatibilidad para ejecutar directamente un clon del código fuente.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from chessstudio.main_window import MainWindow
 
 
 def main() -> int:
-    """Crea y ejecuta la interfaz gráfica de ChessStudio."""
+    """Crea y ejecuta la interfaz gráfica de Chess Games Manager."""
     # Partidas muy largas con variantes profundas pueden superar el límite
     # de recursión por defecto al exportar árboles PGN.
     sys.setrecursionlimit(10_000)
@@ -29,18 +29,18 @@ def main() -> int:
         try:
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                "io.github.mkllnd1517.chessstudio"
+                "io.github.mkllnd1517.chessgamesmanager"
             )
         except (AttributeError, OSError):
             pass
 
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
-    app.setApplicationDisplayName("ChessStudio — Chess Game Manager")
+    app.setApplicationDisplayName(APP_NAME)
     app.setApplicationVersion(__version__)
-    app.setOrganizationName("ChessStudio")
+    app.setOrganizationName(APP_NAME)
     app.setOrganizationDomain("github.com/mkllnd1517")
-    app.setDesktopFileName("io.github.mkllnd1517.ChessStudio")
+    app.setDesktopFileName("io.github.mkllnd1517.ChessGamesManager")
     app.setStyle("Fusion")
 
     icon_path = resource_path("chessstudio", "assets", "chessstudio.svg")
@@ -50,7 +50,7 @@ def main() -> int:
     window = MainWindow()
     window.show()
 
-    # El instalador registra ChessStudio como visor de .pgn. Programar la
+    # El instalador registra Chess Games Manager como visor de .pgn. Programar la
     # apertura permite que la ventana se pinte antes de iniciar el parseo en
     # segundo plano y también funciona al invocarlo desde un acceso directo.
     pgn_path = pgn_path_from_arguments(sys.argv)

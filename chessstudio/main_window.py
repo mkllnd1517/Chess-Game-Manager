@@ -1,5 +1,7 @@
-"""Ventana principal de ChessStudio: pestañas de partidas, bases, explorador,
-motor y preparación de rival. Sin referencias a productos de terceros.
+"""Ventana principal de Chess Games Manager.
+
+Coordina pestañas de partidas, bases locales, explorador de aperturas, motor,
+repertorios y preparación de rival.
 """
 from __future__ import annotations
 
@@ -35,7 +37,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from chessstudio import __version__
+from chessstudio import APP_NAME, __version__
 from chessstudio.app_paths import app_documents_directory, legal_document_path
 from chessstudio.board_widget import BoardWidget
 from chessstudio.database import (
@@ -52,6 +54,7 @@ from chessstudio.notation_view import NotationView
 from chessstudio.opening_tree import OpeningTreeWidget
 from chessstudio.opponent_prep import OpponentPrepWidget
 from chessstudio.pgn_utils import display_comment
+from chessstudio.repertoire import RepertoireWidget
 from chessstudio.search_dialog import SearchDialog
 from chessstudio.workers import (
     GameParseWorker,
@@ -62,9 +65,14 @@ from chessstudio.workers import (
 
 
 class GamePropertiesDialog(QDialog):
-    def __init__(self, headers: dict, parent: QWidget | None = None):
+    def __init__(
+        self,
+        headers: dict,
+        parent: QWidget | None = None,
+        for_export: bool = False,
+    ):
         super().__init__(parent)
-        self.setWindowTitle("Propiedades de la partida")
+        self.setWindowTitle("Propiedades del PGN a exportar" if for_export else "Propiedades de la partida")
         self.setMinimumWidth(360)
         self.fields: dict[str, QLineEdit] = {}
         form = QFormLayout()
@@ -81,6 +89,8 @@ class GamePropertiesDialog(QDialog):
                 self.fields[header] = edit
                 form.addRow(f"{header}:", edit)
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        if for_export:
+            buttons.button(QDialogButtonBox.Ok).setText("Exportar")
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout = QVBoxLayout(self)
@@ -104,9 +114,9 @@ class LegalNoticesDialog(QDialog):
         summary = QTextBrowser()
         summary.setOpenExternalLinks(True)
         summary.setHtml(
-            "<h2>ChessStudio — Chess Game Manager</h2>"
+            "<h2>Chess Games Manager</h2>"
             f"<p>Versión <b>{__version__}</b></p>"
-            "<p>Copyright © 2026 Chess Game Manager contributors.</p>"
+            "<p>Copyright © 2026 Chess Games Manager contributors.</p>"
             "<p>Este programa es software libre: puedes redistribuirlo o "
             "modificarlo conforme a la <b>GNU General Public License v3 o "
             "posterior (GPL-3.0-or-later)</b>.</p>"
@@ -148,6 +158,49 @@ class LegalNoticesDialog(QDialog):
             )
         viewer.setPlainText(text)
         return viewer
+
+
+class QuickHelpDialog(QDialog):
+    """Guía breve, revisada y legible de las funciones principales."""
+
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.setWindowTitle("Ayuda de Chess Games Manager")
+        self.resize(720, 520)
+
+        guide = QTextBrowser()
+        guide.setOpenExternalLinks(True)
+        guide.setHtml(
+            "<h2>Guía rápida</h2>"
+            "<h3>Partidas y bases</h3>"
+            "<p>Abre o crea una base desde <b>Archivo</b>. Puedes importar PGN, "
+            "abrirlos sin importarlos y guardar una partida editada en la base. "
+            "Al exportar, primero eliges el destino y después revisas las "
+            "cabeceras PGN, como evento, blancas, negras y resultado.</p>"
+            "<h3>Repertorios</h3>"
+            "<p>En <b>Ver → Repertorios</b> crea perfiles con bases separadas "
+            "para blancas y negras. Cada PGN se puede quitar de forma "
+            "independiente. Los PGN de aperturas incluyen todas sus variantes "
+            "en el explorador, no solo la línea principal.</p>"
+            "<h3>Comparar con un rival</h3>"
+            "<p>Activa un repertorio y carga una preparación de rival. En "
+            "<b>Aperturas</b>, el modo de comparación indica la presencia de "
+            "cada jugada: <span style='color:#1565c0'>azul</span> para solo "
+            "repertorio, <span style='color:#2e7d32'>verde</span> para solo "
+            "rival y <span style='color:#9a7600'>amarillo</span> para ambas.</p>"
+            "<h3>Motor</h3>"
+            "<p>Selecciona un motor UCI instalado por ti. Las sugerencias "
+            "MultiPV se muestran en bloques separados y sus variantes incluyen "
+            "números de jugada para facilitar su lectura.</p>"
+            "<p>Haz doble clic sobre una jugada del explorador para reproducirla "
+            "en el tablero.</p>"
+        )
+        close = QDialogButtonBox(QDialogButtonBox.Close)
+        close.rejected.connect(self.reject)
+        close.accepted.connect(self.accept)
+        layout = QVBoxLayout(self)
+        layout.addWidget(guide)
+        layout.addWidget(close)
 
 
 class VariationChooserDialog(QDialog):
@@ -366,7 +419,7 @@ class GameWindow(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.settings = QSettings("ChessStudio", "ChessStudio")
+        self.settings = QSettings(APP_NAME, APP_NAME)
         self.db: ChessDatabase | None = None
         self._import_thread = None
         self._import_worker = None
@@ -389,16 +442,20 @@ class MainWindow(QMainWindow):
         self.opening_tree.remoteGameRequested.connect(self._open_remote_game)
         self.engine_panel = EnginePanel()
         self.opponent_prep = OpponentPrepWidget()
+        self.repertoire = RepertoireWidget()
         self.opponent_prep.gameSelected.connect(self._open_opponent_game)
         self.opponent_prep.prepDatabaseReady.connect(self._on_prep_database_ready)
         self.opponent_prep.referenceFilterChanged.connect(self.opening_tree.update_reference_filter)
         self.opponent_prep.explorerRequested.connect(self._show_explorer)
         self.opponent_prep.statusMessage.connect(lambda msg: self.statusBar().showMessage(msg, 6000))
+        self.repertoire.repertoireDatabaseReady.connect(self._on_repertoire_database_ready)
+        self.repertoire.comparisonRequested.connect(self._compare_repertoire_with_rival)
+        self.repertoire.statusMessage.connect(lambda msg: self.statusBar().showMessage(msg, 6000))
 
         self._build_docks()
         self._build_actions()
         self._build_menus()
-        self.setWindowTitle("ChessStudio")
+        self.setWindowTitle(APP_NAME)
         self.resize(1280, 820)
 
         geometry = self.settings.value("window/geometry")
@@ -435,7 +492,15 @@ class MainWindow(QMainWindow):
         self.prep_dock = QDockWidget("Preparar rival", self)
         self.prep_dock.setWidget(self.opponent_prep)
         self.addDockWidget(Qt.RightDockWidgetArea, self.prep_dock)
+
+        self.repertoire_dock = QDockWidget("Repertorios", self)
+        self.repertoire_dock.setWidget(self.repertoire)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.repertoire_dock)
+
+        # Motor, preparación y repertorios son tareas de estudio alternativas:
+        # se agrupan en pestañas para que el tablero conserve espacio útil.
         self.tabifyDockWidget(self.engine_dock, self.prep_dock)
+        self.tabifyDockWidget(self.prep_dock, self.repertoire_dock)
         self.engine_dock.raise_()
         self.resizeDocks([self.tree_dock, self.engine_dock], [470, 330], Qt.Vertical)
 
@@ -493,13 +558,19 @@ class MainWindow(QMainWindow):
         self.act_prep.setToolTip("Abrir el panel de preparación de rival")
         self.act_prep.triggered.connect(self._show_prep)
 
+        self.act_repertoire = QAction("Repertorios", self)
+        self.act_repertoire.setToolTip("Crear repertorios de blancas y negras a partir de archivos PGN")
+        self.act_repertoire.triggered.connect(self._show_repertoire)
+
         self.act_close = QAction("Salir", self)
         self.act_close.setShortcut(QKeySequence.Quit)
         self.act_close.triggered.connect(self.close)
 
+        self.act_help = QAction("Guía rápida...", self)
+        self.act_help.triggered.connect(self.show_help)
         self.act_legal = QAction("Licencia y avisos de terceros...", self)
         self.act_legal.triggered.connect(self.show_legal_notices)
-        self.act_about = QAction("Acerca de ChessStudio", self)
+        self.act_about = QAction(f"Acerca de {APP_NAME}", self)
         self.act_about.triggered.connect(self.show_about)
 
         toolbar = QToolBar("Principal")
@@ -507,7 +578,7 @@ class MainWindow(QMainWindow):
         self.addToolBar(toolbar)
         for action in (self.act_new_game, self.act_open_db, self.act_open_pgn, self.act_save,
                        self.act_search, self.act_import, self.act_export, self.act_delete_games,
-                       self.act_flip, self.act_prep):
+                       self.act_flip, self.act_prep, self.act_repertoire):
             toolbar.addAction(action)
 
     def _build_menus(self) -> None:
@@ -536,6 +607,7 @@ class MainWindow(QMainWindow):
         menu_view.addAction(self.tree_dock.toggleViewAction())
         menu_view.addAction(self.engine_dock.toggleViewAction())
         menu_view.addAction(self.prep_dock.toggleViewAction())
+        menu_view.addAction(self.repertoire_dock.toggleViewAction())
 
         # Lista de partidas: tecla Supr y menú contextual (abrir / eliminar).
         self.game_list.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -545,9 +617,14 @@ class MainWindow(QMainWindow):
         del_shortcut.activated.connect(self.delete_selected_games)
 
         menu_help = self.menuBar().addMenu("Ayuda")
+        menu_help.addAction(self.act_help)
+        menu_help.addSeparator()
         menu_help.addAction(self.act_legal)
         menu_help.addSeparator()
         menu_help.addAction(self.act_about)
+
+    def show_help(self) -> None:
+        QuickHelpDialog(self).exec()
 
     def show_legal_notices(self) -> None:
         LegalNoticesDialog(self).exec()
@@ -555,8 +632,8 @@ class MainWindow(QMainWindow):
     def show_about(self) -> None:
         QMessageBox.about(
             self,
-            "Acerca de ChessStudio",
-            f"<h2>ChessStudio</h2><p>Chess Game Manager · versión {__version__}</p>"
+            f"Acerca de {APP_NAME}",
+            f"<h2>{APP_NAME}</h2><p>Versión {__version__}</p>"
             "<p>Organiza, estudia y analiza tus partidas de ajedrez.</p>"
             "<p>Software libre bajo GPL-3.0-or-later. Consulta Ayuda → "
             "Licencia y avisos de terceros para el texto completo y la "
@@ -606,12 +683,14 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"Base abierta: {path} ({self.db.game_count()} partidas)")
 
     def open_database_dialog(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "Abrir base", "", "Bases ChessStudio (*.csdb);;Todos (*)")
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Abrir base", "", "Bases Chess Games Manager (*.csdb);;Todos (*)"
+        )
         if path:
             self.open_database(path)
 
     def new_database(self) -> None:
-        path, _ = QFileDialog.getSaveFileName(self, "Nueva base", "", "Bases ChessStudio (*.csdb)")
+        path, _ = QFileDialog.getSaveFileName(self, "Nueva base", "", "Bases Chess Games Manager (*.csdb)")
         if path:
             if not path.lower().endswith(".csdb"):
                 path += ".csdb"
@@ -620,7 +699,7 @@ class MainWindow(QMainWindow):
     def _update_title(self) -> None:
         name = self.db.path.name if self.db is not None else "sin base"
         count = self.db.game_count() if self.db is not None else 0
-        self.setWindowTitle(f"ChessStudio - {name} ({count} partidas)")
+        self.setWindowTitle(f"{APP_NAME} - {name} ({count} partidas)")
 
     def refresh_game_list(self, rows: list[GameRow] | None = None) -> None:
         if self.db is None:
@@ -769,6 +848,15 @@ class MainWindow(QMainWindow):
             return
         if not path.lower().endswith(".pgn"):
             path += ".pgn"
+        # Elegir destino y revisar cabeceras forman parte del mismo flujo: así
+        # el PGN exportado lleva el evento, jugadores y resultado que el
+        # usuario quiere compartir, incluso si todavía no guarda esos cambios
+        # en su base principal.
+        properties = GamePropertiesDialog(dict(window.doc.game.headers), self, for_export=True)
+        if properties.exec() != QDialog.Accepted:
+            return
+        window.doc.apply_headers(properties.values())
+        self._rename_tab(window, window.doc.title())
         target = Path(path)
         tmp = target.with_name(target.name + ".tmp")
         try:
@@ -964,6 +1052,24 @@ class MainWindow(QMainWindow):
     def _on_prep_database_ready(self, database, player: str, color: str) -> None:
         self.opening_tree.set_reference_database(database, player, color)
 
+    def _on_repertoire_database_ready(self, database, name: str, color: str) -> None:
+        self.opening_tree.set_repertoire_database(database, name, color)
+        if database is not None:
+            self._show_explorer()
+
+    def _compare_repertoire_with_rival(self) -> None:
+        if self.opening_tree.show_repertoire_comparison():
+            self._show_explorer()
+            self.statusBar().showMessage(
+                "Comparando repertorio y rival: las jugadas amarillas coinciden en esta posición.", 7000
+            )
+        else:
+            QMessageBox.information(
+                self,
+                "Comparar repertorio",
+                "Carga primero una preparación de rival y activa un repertorio para comparar ambos.",
+            )
+
     def _show_explorer(self) -> None:
         self.tree_dock.show()
         self.tree_dock.raise_()
@@ -972,6 +1078,10 @@ class MainWindow(QMainWindow):
     def _show_prep(self) -> None:
         self.prep_dock.show()
         self.prep_dock.raise_()
+
+    def _show_repertoire(self) -> None:
+        self.repertoire_dock.show()
+        self.repertoire_dock.raise_()
 
     # ------------------------------------------------------------------ #
     # Cierre
@@ -999,6 +1109,7 @@ class MainWindow(QMainWindow):
             self._open_thread.quit()
             self._open_thread.wait(3000)
         self.engine_panel.shutdown()
+        self.repertoire.shutdown()
         self.opponent_prep.shutdown()
         if self.db is not None:
             self.db.close()

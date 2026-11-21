@@ -196,8 +196,22 @@ def test_svg_pieces_available(qapp):
 
 
 # --------------------------------------------------------------------- #
-# Motor: fijar posición
+# Motor: fijar posición y mostrar variantes
 # --------------------------------------------------------------------- #
+def test_engine_pv_includes_move_numbers():
+    from chessstudio.engine_panel import format_pv
+
+    board = chess.Board()
+    moves = [board.parse_san("e4")]
+    board.push(moves[0])
+    moves.append(board.parse_san("e5"))
+    assert format_pv(chess.Board(), moves) == "1. e4 e5"
+
+    after_e4 = chess.Board()
+    after_e4.push_san("e4")
+    assert format_pv(after_e4, [after_e4.parse_san("e5")]) == "1... e5"
+
+
 def test_engine_lock_state(qapp):
     panel = EnginePanel()
     board = chess.Board()
