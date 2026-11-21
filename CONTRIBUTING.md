@@ -1,6 +1,6 @@
-# Contribuir a ChessStudio
+# Contribuir a Chess Games Manager
 
-Gracias por dedicar tiempo a mejorar ChessStudio. El proyecto busca ser útil,
+Gracias por dedicar tiempo a mejorar Chess Games Manager. El proyecto busca ser útil,
 claro y respetuoso con los datos de las personas usuarias.
 
 ## Antes de empezar

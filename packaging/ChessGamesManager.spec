@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""Especificación PyInstaller para el paquete de escritorio ChessStudio.
+"""Especificación PyInstaller para Chess Games Manager.
 
-Genera una carpeta autosuficiente en ``dist/ChessStudio``. En Windows, el
+Genera una carpeta autosuficiente en ``dist/ChessGamesManager``. En Windows, el
 script ``scripts/build_release.py`` encadena después Inno Setup y crea un
 instalador que deja un acceso directo en el escritorio.
 """
@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 
 block_cipher = None
-ICON = Path(SPECPATH).resolve().parent / "packaging" / "windows" / "chessstudio.ico"
+ICON = Path(SPECPATH).resolve().parent / "packaging" / "windows" / "chessgamesmanager.ico"
 ROOT = Path(SPECPATH).resolve().parent
 
 # Todos estos datos se usan en tiempo de ejecución: piezas SVG, icono y los
@@ -41,7 +41,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="ChessStudio",
+    name="ChessGamesManager",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -61,5 +61,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="ChessStudio",
+    name="ChessGamesManager",
 )

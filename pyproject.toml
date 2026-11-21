@@ -3,9 +3,9 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "chess-game-manager"
-version = "0.6.0"
-description = "Gestor de partidas de ajedrez, explorador de aperturas y preparación de rivales."
+name = "chess-games-manager"
+version = "0.7.1"
+description = "Chess Games Manager: partidas, repertorios, aperturas y preparación de rivales."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "GPL-3.0-or-later"
@@ -16,7 +16,7 @@ license-files = [
   "chessstudio/pieces/LICENSE.txt",
   "chessstudio/pieces/GPL-2.0.txt",
 ]
-authors = [{name = "Chess Game Manager contributors"}]
+authors = [{name = "Chess Games Manager contributors"}]
 keywords = ["chess", "pgn", "uci", "chess-database", "pyside6"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -34,7 +34,7 @@ classifiers = [
 ]
 dependencies = [
   # Widgets, Network y SVG pertenecen a Essentials. Evitamos el meta-paquete
-  # PySide6, WebEngine, PDF y otros módulos que ChessStudio no utiliza.
+  # PySide6, WebEngine, PDF y otros módulos que la aplicación no utiliza.
   # 6.5–6.9 es la familia validada en CI; se evita incorporar cambios ABI de
   # Qt posteriores sin ejecutar antes la batería gráfica completa.
   "PySide6-Essentials>=6.5,<6.10",
@@ -42,7 +42,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# keyring mejora la protección del token de Lichess, pero ChessStudio conserva
+# keyring mejora la protección del token de Lichess, pero la aplicación conserva
 # un almacenamiento alternativo cuando el sistema no ofrece un llavero.
 secure-storage = ["keyring>=24,<27"]
 build = ["pyinstaller>=6.0"]
@@ -54,7 +54,7 @@ Repository = "https://github.com/mkllnd1517/Chess-Game-Manager"
 Issues = "https://github.com/mkllnd1517/Chess-Game-Manager/issues"
 
 [project.gui-scripts]
-chessstudio = "chessstudio.app:main"
+chess-games-manager = "chessstudio.app:main"
 
 [tool.setuptools.packages.find]
 include = ["chessstudio*"]

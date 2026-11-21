@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from chessstudio import APP_NAME
 from chessstudio.lichess_explorer import (
     ALL_SPEEDS,
     RATING_PRESETS,
@@ -41,6 +42,8 @@ from chessstudio.lichess_explorer import (
 from chessstudio.secure_store import get_token, set_token, storage_description
 
 REF_BG = QColor("#e8f5e9")
+PRIMARY_ONLY_BG = QColor("#e3f2fd")
+COMMON_BG = QColor("#fff8e1")
 ERROR_STYLE = "color:#c62828;"
 OK_STYLE = "color:#2e7d32;"
 
@@ -52,13 +55,19 @@ class OpeningTreeWidget(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.database = None
+        # reference_db es la base de preparación del rival. repertoire_db es
+        # independiente: contiene únicamente el repertorio elegido por el
+        # usuario (blancas o negras) y puede compararse contra el rival.
         self.reference_db = None
         self.ref_player = ""
         self.ref_color = "both"
-        self._scope = "compare"  # "compare" | "main" | "rival"
+        self.repertoire_db = None
+        self.repertoire_name = ""
+        self.repertoire_color = "both"
+        self._scope = "main"  # main | rival | compare | repertoire | repertoire_compare
         self._fen = chess.STARTING_FEN
         self._lichess_key = ""
-        self._settings = QSettings("ChessStudio", "ChessStudio")
+        self._settings = QSettings(APP_NAME, APP_NAME)
 
         self.explorer = LichessExplorer(self)
         self.explorer.set_token(get_token())
@@ -80,6 +89,7 @@ class OpeningTreeWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
         layout.addWidget(self.tabs)
+        self._rebuild_scope_choices()
 
     # ------------------------------------------------------------------ #
     # Construcción de UI
@@ -90,9 +100,6 @@ class OpeningTreeWidget(QWidget):
         scope_row = QHBoxLayout()
         scope_row.addWidget(QLabel("Ver:"))
         self.scope_combo = QComboBox()
-        self.scope_combo.addItem("Base principal + rival", "compare")
-        self.scope_combo.addItem("Solo base principal", "main")
-        self.scope_combo.addItem("Solo rival (base de preparación)", "rival")
         self.scope_combo.currentIndexChanged.connect(self._on_scope_changed)
         self.scope_combo.setEnabled(False)
         scope_row.addWidget(self.scope_combo, 1)
@@ -102,9 +109,9 @@ class OpeningTreeWidget(QWidget):
         self.info = QLabel("Sin base de datos abierta.")
         self.info.setWordWrap(True)
         self.info.setTextFormat(Qt.PlainText)  # nombres del PGN no confiables
-        self.table = QTableWidget(0, 8)
+        self.table = QTableWidget(0, 9)
         self.table.setHorizontalHeaderLabels(
-            ["Jugada", "Partidas", "%B", "%T", "%N", "Año", "Rival", "R %B"]
+            ["Jugada", "Partidas", "%B", "%T", "%N", "Año", "Rival", "R %B", "Presencia"]
         )
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -113,11 +120,12 @@ class OpeningTreeWidget(QWidget):
         header = self.table.horizontalHeader()
         header.setMinimumSectionSize(46)
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        for column in range(1, 8):
+        for column in range(1, 9):
             header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
         header.setStretchLastSection(True)
         self.table.setColumnHidden(6, True)
         self.table.setColumnHidden(7, True)
+        self.table.setColumnHidden(8, True)
         self.table.cellDoubleClicked.connect(self._on_local_double_click)
 
         hint = QLabel("Doble clic en una jugada para jugarla en el tablero.")
@@ -235,29 +243,80 @@ class OpeningTreeWidget(QWidget):
     # ------------------------------------------------------------------ #
     def set_database(self, database) -> None:
         self.database = database
+        self._rebuild_scope_choices()
         self.refresh()
 
     def set_reference_database(self, database, player: str = "", color: str = "both") -> None:
+        """Activa o retira la base de preparación del rival."""
         self.reference_db = database
         self.ref_player = player
         self.ref_color = color
-        active = database is not None
-        self.scope_combo.setEnabled(active)
-        self.scope_combo.blockSignals(True)
-        if active:
-            # Al activar una preparación, la base del rival pasa a ser la base
-            # de datos que se explora (modo "Solo rival").
+        if database is not None:
+            # Se conserva el comportamiento original: al abrir una preparación
+            # el explorador muestra primero el rival.
             self._scope = "rival"
-            self.scope_combo.setCurrentIndex(self.scope_combo.findData("rival"))
             self.tabs.setCurrentIndex(0)
-        else:
-            self._scope = "compare"
-            self.scope_combo.setCurrentIndex(0)
-        self.scope_combo.blockSignals(False)
+        elif self._scope in {"rival", "compare", "repertoire_compare"}:
+            self._scope = "repertoire" if self.repertoire_db is not None else "main"
+        self._rebuild_scope_choices()
         self.refresh()
 
+    def set_repertoire_database(self, database, name: str = "", color: str = "both") -> None:
+        """Activa un repertorio como fuente del explorador.
+
+        La base se mantiene separada de la colección general y de la
+        preparación del rival. El color es informativo: cada repertorio tiene
+        una base independiente de blancas y otra de negras.
+        """
+        self.repertoire_db = database
+        self.repertoire_name = name
+        self.repertoire_color = color
+        if database is not None:
+            self._scope = "repertoire"
+            self.tabs.setCurrentIndex(0)
+        elif self._scope in {"repertoire", "repertoire_compare"}:
+            self._scope = "rival" if self.reference_db is not None else "main"
+        self._rebuild_scope_choices()
+        self.refresh()
+
+    def show_repertoire_comparison(self) -> bool:
+        """Muestra las líneas coincidentes entre el repertorio y el rival."""
+        if self.repertoire_db is None or self.reference_db is None:
+            return False
+        self._scope = "repertoire_compare"
+        self._rebuild_scope_choices()
+        self.tabs.setCurrentIndex(0)
+        self.refresh()
+        return True
+
+    def _rebuild_scope_choices(self) -> None:
+        """Actualiza el selector sin mostrar opciones que no tienen base."""
+        entries: list[tuple[str, str]] = []
+        if self.database is not None:
+            entries.append(("Base principal", "main"))
+        if self.repertoire_db is not None:
+            color = {"white": "blancas", "black": "negras"}.get(self.repertoire_color, "ambos colores")
+            entries.append((f"Repertorio: {self.repertoire_name or 'sin nombre'} ({color})", "repertoire"))
+        if self.reference_db is not None:
+            entries.append(("Solo rival (base de preparación)", "rival"))
+            if self.database is not None:
+                entries.append(("Base principal + rival", "compare"))
+            if self.repertoire_db is not None:
+                entries.append(("Repertorio + rival · líneas coincidentes", "repertoire_compare"))
+        if not entries:
+            entries.append(("Sin fuente disponible", "main"))
+        if self._scope not in {value for _, value in entries}:
+            self._scope = entries[0][1]
+        self.scope_combo.blockSignals(True)
+        self.scope_combo.clear()
+        for label, value in entries:
+            self.scope_combo.addItem(label, value)
+        self.scope_combo.setCurrentIndex(max(0, self.scope_combo.findData(self._scope)))
+        self.scope_combo.setEnabled(len(entries) > 1)
+        self.scope_combo.blockSignals(False)
+
     def _on_scope_changed(self) -> None:
-        self._scope = self.scope_combo.currentData() or "compare"
+        self._scope = self.scope_combo.currentData() or "main"
         self.refresh()
 
     def update_reference_filter(self, player: str, color: str) -> None:
@@ -299,29 +358,39 @@ class OpeningTreeWidget(QWidget):
 
     def refresh(self) -> None:
         self.table.setRowCount(0)
-        if self.database is None and self.reference_db is None:
+        if self.database is None and self.reference_db is None and self.repertoire_db is None:
             self.info.setText("Sin base de datos abierta.")
             self.table.setColumnHidden(6, True)
             self.table.setColumnHidden(7, True)
+            self.table.setColumnHidden(8, True)
             return
 
-        scope = self._scope if self.reference_db is not None else "main"
-        compare = scope == "compare"
+        scope = self._scope
+        compare = scope in {"compare", "repertoire_compare"}
         self.table.setColumnHidden(6, not compare)
         self.table.setColumnHidden(7, not compare)
+        self.table.setColumnHidden(8, not compare)
+        primary_column = "Repertorio" if scope in {"repertoire", "repertoire_compare"} else "Base actual"
+        self.table.setHorizontalHeaderLabels(
+            ["Jugada", primary_column, "%B", "%T", "%N", "Año", "Rival", "R %B", "Presencia"]
+        )
 
-        # Estadísticas principales según el modo elegido.
+        # Elegir una fuente principal no mezcla bases: así el usuario puede
+        # estudiar su colección, el repertorio o el rival con el mismo tablero.
         if scope == "rival":
             primary_stats = self._safe_stats(self.reference_db, self.ref_player, self.ref_color)
             who = self.ref_player or "todos los jugadores"
             color_txt = {"white": " con blancas", "black": " con negras"}.get(self.ref_color, "")
             primary_label = f"Base del rival: {who}{color_txt}"
+        elif scope in {"repertoire", "repertoire_compare"}:
+            primary_stats = self._safe_stats(self.repertoire_db)
+            color_txt = {"white": "blancas", "black": "negras"}.get(self.repertoire_color, "")
+            primary_label = f"Repertorio «{self.repertoire_name or 'sin nombre'}» ({color_txt})"
         else:
             primary_stats = self._safe_stats(self.database)
             primary_label = "Base principal"
 
         ref_stats = self._safe_stats(self.reference_db, self.ref_player, self.ref_color) if compare else []
-
         primary_dict = {s.san: s for s in primary_stats}
         ref_dict = {s.san: s for s in ref_stats}
         all_moves = set(primary_dict) | set(ref_dict)
@@ -330,10 +399,18 @@ class OpeningTreeWidget(QWidget):
             return
 
         primary_total = sum(s.games for s in primary_stats)
-        text = f"{primary_label}: {primary_total} partidas"
+        primary_noun = "líneas" if scope in {"repertoire", "repertoire_compare"} else "partidas"
+        text = f"{primary_label}: {primary_total} {primary_noun}"
         if compare:
             ref_total = sum(s.games for s in ref_stats)
+            common = sum(1 for move in all_moves if move in primary_dict and move in ref_dict)
             text += f"  ·  Rival {self.ref_player or 'todos'}: {ref_total}"
+            if scope == "repertoire_compare":
+                if common:
+                    text += f"  ·  {common} continuación(es) coincidente(s)"
+                else:
+                    text += "  ·  Sin continuaciones coincidentes"
+                text += "  ·  Azul: solo repertorio · Verde: solo rival · Amarillo: ambas"
         self.info.setText(text + ".")
 
         sorted_moves = sorted(
@@ -355,14 +432,36 @@ class OpeningTreeWidget(QWidget):
                     values += [str(rstat.games), f"{rstat.white_score:.0f}%"]
                 else:
                     values += ["—", "—"]
+                if pstat and rstat:
+                    presence = "Repertorio y rival" if scope == "repertoire_compare" else "Base y rival"
+                    presence_tip = "La continuación aparece en ambas fuentes."
+                    presence_bg = COMMON_BG
+                elif pstat:
+                    presence = "Solo repertorio" if scope == "repertoire_compare" else "Solo base"
+                    presence_tip = "La continuación aparece solo en la fuente principal."
+                    presence_bg = PRIMARY_ONLY_BG
+                else:
+                    presence = "Solo rival"
+                    presence_tip = "La continuación aparece solo en la base del rival."
+                    presence_bg = REF_BG
+                values += [presence]
             else:
-                values += ["", ""]
+                values += ["", "", ""]
             for column, value in enumerate(values):
                 item = QTableWidgetItem(value)
                 if column > 0:
                     item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
                 if compare and column >= 6 and rstat and rstat.games:
                     item.setBackground(REF_BG)
+                if compare and column == 8:
+                    item.setBackground(presence_bg)
+                    item.setToolTip(presence_tip)
+                if scope == "repertoire_compare" and column == 0:
+                    # La etiqueta de presencia ya es explícita; colorear también
+                    # la jugada hace que la diferencia se detecte de inmediato
+                    # al recorrer la primera columna.
+                    item.setBackground(presence_bg)
+                    item.setToolTip(presence_tip)
                 self.table.setItem(row, column, item)
         self.table.setUpdatesEnabled(True)
 

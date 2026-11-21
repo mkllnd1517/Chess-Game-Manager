@@ -1,4 +1,4 @@
-"""Metadatos públicos de ChessStudio."""
+"""Metadatos públicos de Chess Games Manager."""
 
-__version__ = "0.6.0"
-APP_NAME = "ChessStudio"
+__version__ = "0.7.1"
+APP_NAME = "Chess Games Manager"

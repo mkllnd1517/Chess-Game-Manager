@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 def pgn_path_from_arguments(arguments: list[str]) -> str | None:
-    """Devuelve el primer PGN existente indicado al abrir ChessStudio.
+    """Devuelve el primer PGN existente indicado al abrir la aplicación.
 
     Se utiliza desde el acceso directo y la asociación de archivos del
     instalador. Otros argumentos de Qt o rutas inexistentes se ignoran de
