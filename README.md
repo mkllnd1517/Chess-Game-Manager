@@ -22,7 +22,11 @@ Plataformas como Lichess ofrecen excelentes servicios de análisis y exploració
 - **Procesamiento en segundo plano:** importa y abre archivos PGN con indicadores de progreso y opción de cancelación.
 - **Seguridad:** guarda el token de Lichess en el llavero del sistema cuando está disponible y trata los PGN externos de forma defensiva.
 
-## Instalación
+## Instalación desde el código fuente
+
+Chess Games Manager se comparte como código fuente. No se proporcionan
+instaladores ni ejecutables oficiales: cada persona instala las dependencias y
+lo ejecuta en su propio entorno siguiendo estas instrucciones.
 
 ### Qué necesitas
 
@@ -32,8 +36,9 @@ Plataformas como Lichess ofrecen excelentes servicios de análisis y exploració
 - Un motor compatible con el protocolo UCI, solo si quieres usar el análisis de motor.
 
 > **Los motores de ajedrez no se incluyen ni se distribuyen con Chess Games Manager.**
-> Cada usuario debe obtener e instalar su propio motor y seleccionar su
-> ejecutable desde la aplicación. Revisa la licencia del motor que decidas usar.
+> Cada usuario debe obtener e instalar su propio motor desde una fuente oficial
+> o de confianza, seleccionar su ejecutable desde la aplicación y revisar su
+> licencia y condiciones de distribución.
 
 ### Instalación recomendada desde el código fuente
 
@@ -88,7 +93,11 @@ Para volver a abrirla más adelante, activa de nuevo el entorno virtual y repite
 La aplicación funciona sin esta dependencia. Si la instalas, puede guardar el
 token de Lichess en el llavero del sistema — Windows Credential Locker, macOS
 Keychain o Secret Service/KWallet en Linux — en lugar de usar el mecanismo
-local alternativo.
+local alternativo sin cifrar.
+
+> **Advertencia:** si el sistema no dispone de un llavero compatible, el token
+> se guarda en la configuración local de la aplicación sin cifrado. Se
+> recomienda utilizar un token sin permisos adicionales.
 
 ```bash
 python -m pip install -r requirements-optional.txt
@@ -341,7 +350,8 @@ condiciones aplicables a su API.
 Chess Games Manager puede comunicarse con motores compatibles con el protocolo UCI,
 como Stockfish. La aplicación no incluye, descarga, aloja ni redistribuye esos
 motores: el usuario debe obtenerlos por separado, aceptar sus condiciones y
-seleccionar el ejecutable desde la aplicación.
+seleccionar el ejecutable desde la aplicación. Selecciona únicamente motores
+UCI procedentes de fuentes oficiales o fiables.
 
 Para iniciar un análisis:
 
@@ -364,10 +374,10 @@ mientras navegas por la partida.
 ### Almacenamiento del token de Lichess
 
 Cuando está disponible la dependencia opcional `keyring`, la aplicación utiliza
-el llavero del sistema operativo. Si no hay un llavero disponible, utiliza el
-mecanismo local alternativo. Las versiones anteriores que guardaban el token en
-texto plano pueden migrarlo al llavero cuando está disponible y eliminar la
-copia anterior.
+el llavero del sistema operativo. Si no hay un llavero compatible disponible,
+el token se guarda en la configuración local de la aplicación **sin cifrado**.
+Las versiones anteriores que guardaban el token en texto plano pueden migrarlo
+al llavero cuando está disponible y eliminar la copia anterior.
 
 Además:
 
@@ -434,6 +444,36 @@ Chess-Game-Manager/
 └── THIRD_PARTY_NOTICES.md         # Avisos y licencias de terceros
 ```
 
+## Distribución
+
+Chess Games Manager se publica como proyecto de código abierto bajo la licencia
+GNU GPL v3 o posterior. El repositorio contiene el código fuente, los recursos
+y las herramientas auxiliares necesarias para desarrollar y ejecutar la
+aplicación.
+
+**No se distribuyen instaladores ni ejecutables oficiales.** Cada persona puede
+obtener el código fuente, instalar las dependencias necesarias y ejecutar la
+aplicación en su propio entorno.
+
+El proyecto incluye scripts auxiliares para construir paquetes de escritorio
+mediante PyInstaller e Inno Setup. Se proporcionan para desarrollo, validación
+y compilaciones locales; su presencia no implica que el proyecto publique
+versiones binarias oficiales.
+
+### Motores de ajedrez
+
+Chess Games Manager no incluye, descarga, aloja ni redistribuye motores de
+ajedrez. Para usar análisis con motor, obtén por separado un motor compatible
+con UCI, como Stockfish, desde una fuente oficial o fiable y configúralo en la
+aplicación. Cada motor conserva sus propias condiciones de licencia y
+distribución.
+
+### Dependencias
+
+Las dependencias de Python se instalan por separado siguiendo las instrucciones
+de este repositorio. Cada dependencia conserva su propia licencia y sus avisos
+de copyright; consulta [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
 ## Licencia
 
 Chess Games Manager se distribuye bajo la licencia **GNU General Public License
@@ -447,7 +487,7 @@ licencias y avisos de autoría; consulta
 
 La información de licencias identifica los componentes conocidos del proyecto;
 no sustituye una revisión de las versiones concretas incluidas en una futura
-publicación.
+redistribución de terceros.
 
 ## Contribuciones
 

@@ -50,9 +50,9 @@ def main() -> int:
     window = MainWindow()
     window.show()
 
-    # El instalador registra Chess Games Manager como visor de .pgn. Programar la
-    # apertura permite que la ventana se pinte antes de iniciar el parseo en
-    # segundo plano y también funciona al invocarlo desde un acceso directo.
+    # Una asociación local de .pgn puede invocar la aplicación con un archivo.
+    # Programar su apertura permite que la ventana se pinte antes de iniciar el
+    # parseo en segundo plano y también funciona desde un acceso directo.
     pgn_path = pgn_path_from_arguments(sys.argv)
     if pgn_path:
         QTimer.singleShot(0, lambda: window.start_open_pgn(pgn_path))

@@ -2,8 +2,8 @@
 
 Centralizar las rutas evita asumir que la carpeta del usuario se llama
 literalmente ``Documents`` (no es así en todos los idiomas ni sistemas) y
-permite que la misma aplicación funcione desde código fuente o congelada con
-PyInstaller.
+permite que la misma aplicación funcione desde código fuente o desde una
+compilación local congelada con PyInstaller.
 """
 from __future__ import annotations
 

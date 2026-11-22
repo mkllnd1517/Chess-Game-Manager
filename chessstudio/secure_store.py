@@ -6,10 +6,10 @@ Prioriza el llavero del sistema operativo (biblioteca ``keyring``):
   * Linux    -> Secret Service / KWallet
 
 Si no hay un llavero disponible (p. ej. un Linux sin escritorio), cae a
-QSettings. Conviene recordar que un token de Lichess SIN permisos solo puede
-leer datos públicos, así que incluso en ese fallback el riesgo es bajo; aun
-así, siempre que se puede, el token se guarda cifrado en el llavero y se
-elimina cualquier copia en texto plano.
+QSettings, que es configuración local sin cifrar. Un token de Lichess SIN
+permisos solo puede leer datos públicos, pero debe seguir tratándose como
+confidencial. Siempre que se puede, el token se guarda cifrado en el llavero y
+se elimina cualquier copia en texto plano.
 
 El token nunca se escribe en registros ni se envía a hosts que no sean de
 Lichess (ver lichess_explorer.py).
@@ -100,4 +100,4 @@ def storage_description() -> str:
             return f"llavero del sistema ({name})"
         except Exception:
             return "llavero del sistema"
-    return "configuración local (sin llavero del sistema disponible)"
+    return "configuración local sin cifrar (sin llavero del sistema disponible)"

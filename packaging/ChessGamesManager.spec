@@ -1,9 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""Especificación PyInstaller para Chess Games Manager.
+"""Especificación PyInstaller para una compilación local de desarrollo.
 
-Genera una carpeta autosuficiente en ``dist/ChessGamesManager``. En Windows, el
-script ``scripts/build_release.py`` encadena después Inno Setup y crea un
-instalador que deja un acceso directo en el escritorio.
+Genera una carpeta autosuficiente en ``dist/ChessGamesManager``. En Windows,
+``scripts/build_release.py`` puede encadenar Inno Setup para probar localmente
+la receta de instalador. El proyecto no publica binarios oficiales.
 """
 from pathlib import Path
 import sys
@@ -13,8 +13,8 @@ ICON = Path(SPECPATH).resolve().parent / "packaging" / "windows" / "chessgamesma
 ROOT = Path(SPECPATH).resolve().parent
 
 # Todos estos datos se usan en tiempo de ejecución: piezas SVG, icono y los
-# textos legales accesibles desde Ayuda. Mantenerlos aquí evita instaladores
-# que funcionen pero pierdan el tablero o los avisos de licencia.
+# textos legales accesibles desde Ayuda. Mantenerlos aquí evita compilaciones
+# locales incompletas que pierdan el tablero o los avisos de licencia.
 datas = [
     (str(ROOT / "chessstudio" / "assets"), "chessstudio/assets"),
     (str(ROOT / "chessstudio" / "pieces"), "chessstudio/pieces"),
