@@ -1,6 +1,7 @@
-; Instalador de Windows para Chess Games Manager — generado con Inno Setup 6.
-; Ejecutar scripts/build_release.py en Windows: compila PyInstaller y, si
-; ISCC está disponible, invoca este archivo automáticamente.
+; Receta de instalador local para Chess Games Manager con Inno Setup 6.
+; Ejecutar scripts/build_release.py en Windows compila PyInstaller y, si ISCC
+; está disponible, invoca este archivo automáticamente. El proyecto no publica
+; instaladores oficiales.
 
 #define AppName "Chess Games Manager"
 #define AppVersion "0.7.1"

@@ -113,6 +113,13 @@ def test_secure_store_roundtrip():
         secure_store.set_token(original)
 
 
+def test_secure_store_identifies_unencrypted_fallback(monkeypatch):
+    from chessstudio import secure_store
+
+    monkeypatch.setattr(secure_store, "_keyring_works", lambda: False)
+    assert "sin cifrar" in secure_store.storage_description()
+
+
 # --------------------------------------------------------------------- #
 # Explorador: modo rival como base de datos
 # --------------------------------------------------------------------- #
