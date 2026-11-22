@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Construye el paquete de escritorio reproducible de Chess Games Manager.
+"""Construye artefactos locales de Chess Games Manager para desarrollo.
 
 Uso:
     python -m pip install -e ".[build]"
     python scripts/build_release.py
 
-El resultado principal es ``dist/ChessGamesManager/``. En Windows, si Inno Setup 6
-(``ISCC.exe``) está instalado y disponible en PATH, también se crea
-``dist/installer/Chess-Games-Manager-Setup-<versión>.exe`` con acceso directo opcional
-en el escritorio.
+El resultado principal local es ``dist/ChessGamesManager/``. En Windows, si
+Inno Setup 6 (``ISCC.exe``) está disponible, también puede generarse una prueba
+local de instalador en ``dist/installer/``. El proyecto publica código fuente:
+este script no crea ni implica una distribución oficial de binarios.
 """
 from __future__ import annotations
 
@@ -99,26 +99,28 @@ def main() -> int:
     run([sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", str(SPEC)])
     app_directory = ROOT / "dist" / "ChessGamesManager"
     manifest = write_component_manifest(app_directory)
-    print(f"\nAplicación creada: {app_directory}")
+    print(f"\nCompilación local creada: {app_directory}")
     print(f"Inventario de componentes: {manifest}")
 
     if sys.platform != "win32":
         print(
-            "\nEn Linux, distribuye la carpeta dist/ChessGamesManager completa. "
-            "Para integrar el acceso directo, consulta packaging/linux/README.md."
+            "\nPara usar esta compilación local en Linux, consulta "
+            "packaging/linux/README.md. El proyecto no distribuye binarios oficiales."
         )
         return 0
 
     compiler = shutil.which("ISCC") or shutil.which("ISCC.exe")
     if compiler is None:
         print(
-            "\nPyInstaller terminó correctamente. Para crear el instalador de Windows "
-            "con acceso directo de escritorio, instala Inno Setup 6 y ejecuta:\n"
-            f'  ISCC "{WINDOWS_INSTALLER}"'
+            "\nPyInstaller terminó correctamente. Para probar localmente una receta "
+            "de instalador de Windows, instala Inno Setup 6 y ejecuta:\n"
+            f'  ISCC "{WINDOWS_INSTALLER}"\n'
+            "El proyecto no publica instaladores oficiales."
         )
         return 0
     run([compiler, str(WINDOWS_INSTALLER)])
-    print(f"\nInstalador creado: {ROOT / 'dist' / 'installer'}")
+    print(f"\nPrueba local de instalador creada: {ROOT / 'dist' / 'installer'}")
+    print("No se publica como instalador oficial del proyecto.")
     return 0
 
 

@@ -2,6 +2,17 @@
 
 El formato se inspira en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [Sin publicar]
+
+### Documentación y seguridad
+
+- Se aclara que el proyecto publica código fuente, no instaladores ni
+  ejecutables oficiales; las recetas de empaquetado son auxiliares y locales.
+- Se documenta el almacenamiento local sin cifrar del token de Lichess cuando
+  el sistema no ofrece un llavero compatible.
+- Se refuerzan las indicaciones sobre motores UCI fiables, dependencias y
+  licencias de terceros.
+
 ## [0.7.1] — 2026-11-08
 
 ### Añadido

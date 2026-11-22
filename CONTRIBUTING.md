@@ -40,10 +40,10 @@ claro y respetuoso con los datos de las personas usuarias.
 No añadas una dependencia, icono, conjunto de piezas, motor o archivo de datos
 sin comprobar primero su procedencia y licencia. Toda incorporación debe:
 
-1. Ser compatible con GPL-3.0-or-later y la forma de distribución prevista.
+1. Ser compatible con GPL-3.0-or-later y con la publicación del proyecto como código fuente.
 2. Incluir los avisos, textos de licencia y atribuciones exigidos.
 3. Documentarse en [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
-4. Incluirse en la configuración de PyInstaller si hace falta en el instalador.
+4. Incluirse en la configuración de PyInstaller si afecta a una comprobación o compilación local auxiliar.
 
 No subas bases `.csdb`, archivos PGN personales, capturas con datos privados,
 tokens, claves, ejecutables UCI ni otros secretos.
@@ -51,8 +51,10 @@ tokens, claves, ejecutables UCI ni otros secretos.
 ## Propuestas de cambio
 
 Describe el problema, el comportamiento esperado, las pruebas realizadas y,
-para cambios visuales, una captura antes/después. Si modifica el instalador,
-indica el sistema operativo y prueba también abrir y desinstalar el paquete.
+para cambios visuales, una captura antes/después. Si modificas las herramientas
+de compilación local, indica el sistema operativo y comprueba que siguen
+produciendo un artefacto verificable; el proyecto no publica instaladores
+oficiales.
 
 ## Licencia de las contribuciones
 

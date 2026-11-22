@@ -7,8 +7,8 @@ from pathlib import Path
 def pgn_path_from_arguments(arguments: list[str]) -> str | None:
     """Devuelve el primer PGN existente indicado al abrir la aplicación.
 
-    Se utiliza desde el acceso directo y la asociación de archivos del
-    instalador. Otros argumentos de Qt o rutas inexistentes se ignoran de
+    Se utiliza desde un acceso directo o una asociación local de archivos.
+    Otros argumentos de Qt o rutas inexistentes se ignoran de
     forma intencionada: abrir un archivo siempre requiere una ruta PGN real.
     """
     for argument in arguments[1:]:
