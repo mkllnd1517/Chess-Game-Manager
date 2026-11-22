@@ -13,6 +13,12 @@ El formato se inspira en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1
 - Se refuerzan las indicaciones sobre motores UCI fiables, dependencias y
   licencias de terceros.
 
+### Interfaz
+
+- El explorador de Lichess separa las variantes y las partidas destacadas en
+  pestañas internas, para que cada lista pueda ocupar toda la altura disponible
+  del panel y leerse con comodidad.
+
 ## [0.7.1] — 2026-11-08
 
 ### Añadido

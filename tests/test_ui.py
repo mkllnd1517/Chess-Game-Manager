@@ -144,6 +144,11 @@ def test_lichess_render(qapp):
     assert tree.lichess_table.rowCount() == 2
     assert tree.lichess_table.item(0, 0).text() == "e4"
     assert tree.games_list.count() == 1
+    # Las variantes y partidas se ven en pestañas independientes: ninguna
+    # lista pierde altura por apilarse con la otra en el panel derecho.
+    assert tree.lichess_views.count() == 2
+    assert tree.lichess_views.tabText(0) == "Variantes (2)"
+    assert tree.lichess_views.tabText(1) == "Partidas destacadas (1)"
     assert "B00" in tree.lichess_status.text()
     # Una clave obsoleta se ignora
     tree._on_lichess_data("otra|clave", {"moves": []})

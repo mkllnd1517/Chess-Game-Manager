@@ -213,11 +213,26 @@ class OpeningTreeWidget(QWidget):
         self.lichess_status.setWordWrap(True)
         layout.addWidget(self.lichess_status)
 
+        # Las estadísticas y las partidas destacadas antes compartían la poca
+        # altura libre del panel derecho. En pantallas compactas apenas cabía
+        # una variante. Dos vistas internas dejan que cada lista use todo el
+        # espacio disponible, igual que la lista amplia de Preparar rival.
+        self.lichess_views = QTabWidget()
+
+        moves_page = QWidget()
+        moves_layout = QVBoxLayout(moves_page)
+        moves_layout.setContentsMargins(0, 4, 0, 0)
+        moves_hint = QLabel("Variantes disponibles · doble clic para jugarlas en el tablero.")
+        moves_hint.setStyleSheet("color:#777;")
+        moves_layout.addWidget(moves_hint)
+
         self.lichess_table = QTableWidget(0, 6)
         self.lichess_table.setHorizontalHeaderLabels(
             ["Jugada", "Partidas", "%B", "%T", "%N", "Elo medio"]
         )
         self.lichess_table.verticalHeader().setVisible(False)
+        self.lichess_table.verticalHeader().setDefaultSectionSize(27)
+        self.lichess_table.setAlternatingRowColors(True)
         self.lichess_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.lichess_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.lichess_table.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -228,12 +243,24 @@ class OpeningTreeWidget(QWidget):
             header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
         header.setStretchLastSection(True)
         self.lichess_table.cellDoubleClicked.connect(self._on_lichess_double_click)
-        layout.addWidget(self.lichess_table, 3)
+        moves_layout.addWidget(self.lichess_table, 1)
+        self.lichess_views.addTab(moves_page, "Variantes")
 
-        layout.addWidget(QLabel("Partidas destacadas (doble clic para abrirlas):"))
+        games_page = QWidget()
+        games_layout = QVBoxLayout(games_page)
+        games_layout.setContentsMargins(0, 4, 0, 0)
+        self.games_label = QLabel("Partidas destacadas · doble clic para abrirlas.")
+        self.games_label.setStyleSheet("color:#777;")
+        games_layout.addWidget(self.games_label)
         self.games_list = QListWidget()
+        self.games_list.setAlternatingRowColors(True)
+        self.games_list.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self.games_list.setToolTip("Partidas de ejemplo de la fuente seleccionada. Doble clic para abrir.")
         self.games_list.itemDoubleClicked.connect(self._on_game_double_click)
-        layout.addWidget(self.games_list, 2)
+        games_layout.addWidget(self.games_list, 1)
+        self.lichess_views.addTab(games_page, "Partidas destacadas")
+
+        layout.addWidget(self.lichess_views, 1)
 
         self._on_source_changed()
         return widget
@@ -529,6 +556,9 @@ class OpeningTreeWidget(QWidget):
             return
         self.lichess_table.setRowCount(0)
         self.games_list.clear()
+        self.lichess_views.setTabText(0, "Variantes")
+        self.lichess_views.setTabText(1, "Partidas destacadas")
+        self.games_label.setText("Partidas destacadas · doble clic para abrirlas.")
 
         total = int(data.get("white", 0)) + int(data.get("draws", 0)) + int(data.get("black", 0))
         opening = data.get("opening") or {}
@@ -547,6 +577,7 @@ class OpeningTreeWidget(QWidget):
         self.lichess_status.setStyleSheet(OK_STYLE)
 
         moves = data.get("moves") or []
+        self.lichess_views.setTabText(0, f"Variantes ({len(moves)})")
         self.lichess_table.setUpdatesEnabled(False)
         self.lichess_table.setRowCount(len(moves))
         for row, move in enumerate(moves):
@@ -584,6 +615,13 @@ class OpeningTreeWidget(QWidget):
             item = QListWidgetItem(text)
             item.setData(Qt.UserRole, game_id)
             self.games_list.addItem(item)
+        game_count = self.games_list.count()
+        self.lichess_views.setTabText(1, f"Partidas destacadas ({game_count})")
+        self.games_label.setText(
+            f"Partidas destacadas ({game_count}) · doble clic para abrirlas."
+            if game_count
+            else "No hay partidas destacadas para esta posición."
+        )
 
     def _on_lichess_double_click(self, row: int, column: int) -> None:
         item = self.lichess_table.item(row, 0)
