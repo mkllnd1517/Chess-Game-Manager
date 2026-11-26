@@ -202,6 +202,37 @@ def test_svg_pieces_available(qapp):
     assert pixmap.width() >= 60
 
 
+def _opaque_bounds(pixmap):
+    """Devuelve el tamaño del contenido no transparente en píxeles físicos."""
+    image = pixmap.toImage()
+    points = [
+        (x, y)
+        for y in range(image.height())
+        for x in range(image.width())
+        if image.pixelColor(x, y).alpha() > 0
+    ]
+    assert points, "La pieza rasterizada no contiene píxeles visibles"
+    xs, ys = zip(*points)
+    return max(xs) - min(xs) + 1, max(ys) - min(ys) + 1
+
+
+def test_svg_piece_content_scales_once_at_fractional_dpi(qapp):
+    """El contenido conserva su tamaño lógico a 125 %, sin doble escalado."""
+    renderer = get_renderer()
+    renderer.clear_cache()
+    piece = chess.Piece(chess.QUEEN, chess.WHITE)
+    normal = renderer.pixmap(piece, 96, 1.0)
+    fractional = renderer.pixmap(piece, 96, 1.25)
+    normal_bounds = _opaque_bounds(normal)
+    fractional_bounds = _opaque_bounds(fractional)
+
+    assert fractional.devicePixelRatioF() == pytest.approx(1.25)
+    for normal_extent, fractional_extent in zip(normal_bounds, fractional_bounds):
+        # El raster de 125 % debe tener aproximadamente 1,25 veces los píxeles
+        # físicos, no 1,25 veces adicionales por el espacio de pintura.
+        assert fractional_extent / 1.25 == pytest.approx(normal_extent, abs=2)
+
+
 # --------------------------------------------------------------------- #
 # Motor: fijar posición y mostrar variantes
 # --------------------------------------------------------------------- #

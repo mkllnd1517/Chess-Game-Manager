@@ -156,27 +156,43 @@ class BoardWidget(QWidget):
     # ------------------------------------------------------------------ #
     # Geometría
     # ------------------------------------------------------------------ #
+    def _board_geometry(self) -> tuple[int, QRect]:
+        """Devuelve el tamaño de casilla y el único rectángulo del tablero.
+
+        Las coordenadas de Qt llegan en píxeles independientes del dispositivo,
+        también con escalado de portátil (125 %, 150 %, Retina…). Centralizar
+        esta geometría evita que el pintado, las piezas y el ratón redondeen el
+        tamaño o el desplazamiento de manera distinta.
+        """
+        # Quedan al menos 14 píxeles lógicos por lado para el marco; al dividir
+        # entre ocho se descartan los píxeles sobrantes de forma simétrica.
+        square_size = max(1, (min(self.width(), self.height()) - 28) // 8)
+        side = square_size * 8
+        area = QRect((self.width() - side) // 2, (self.height() - side) // 2, side, side)
+        return square_size, area
+
     def _square_size(self) -> int:
-        return max(1, (min(self.width(), self.height()) - 28) // 8)
+        return self._board_geometry()[0]
 
     def _square_rect(self, square: int) -> QRect:
-        size = self._square_size()
+        size, board_area = self._board_geometry()
         file = chess.square_file(square)
         rank = chess.square_rank(square)
         if self.orientation == chess.WHITE:
             x, y = file, 7 - rank
         else:
             x, y = 7 - file, rank
-        offset_x = (self.width() - size * 8) // 2
-        offset_y = (self.height() - size * 8) // 2
-        return QRect(offset_x + x * size, offset_y + y * size, size, size)
+        return QRect(
+            board_area.x() + x * size,
+            board_area.y() + y * size,
+            size,
+            size,
+        )
 
     def _square_at(self, pos: QPoint) -> int | None:
-        size = self._square_size()
-        offset_x = (self.width() - size * 8) // 2
-        offset_y = (self.height() - size * 8) // 2
-        col = (pos.x() - offset_x) // size
-        row = (pos.y() - offset_y) // size
+        size, board_area = self._board_geometry()
+        col = (pos.x() - board_area.x()) // size
+        row = (pos.y() - board_area.y()) // size
         if not (0 <= col < 8 and 0 <= row < 8):
             return None
         if self.orientation == chess.WHITE:
@@ -184,10 +200,7 @@ class BoardWidget(QWidget):
         return chess.square(7 - col, row)
 
     def _board_area(self) -> QRect:
-        size = self._square_size()
-        offset_x = (self.width() - size * 8) // 2
-        offset_y = (self.height() - size * 8) // 2
-        return QRect(offset_x, offset_y, size * 8, size * 8)
+        return self._board_geometry()[1]
 
     # ------------------------------------------------------------------ #
     # Pintado
@@ -226,7 +239,12 @@ class BoardWidget(QWidget):
                 continue
             if self._drag_from == square and self._drag_pos is not None:
                 continue
-            painter.drawPixmap(self._square_rect(square).topLeft(), self._piece_pixmap(piece, size))
+            # Dibujar siempre en el rectángulo lógico de la casilla. Usar solo
+            # topLeft depende del tamaño intrínseco del QPixmap y puede dejar
+            # piezas desplazadas o ligeramente escaladas con DPI fraccional.
+            rect = self._square_rect(square)
+            pixmap = self._piece_pixmap(piece, size)
+            painter.drawPixmap(rect, pixmap, pixmap.rect())
 
         for move in self._targets:
             rect = self._square_rect(move.to_square)
@@ -244,7 +262,13 @@ class BoardWidget(QWidget):
             piece = self.board.piece_at(self._drag_from)
             if piece is not None:
                 pixmap = self._piece_pixmap(piece, size)
-                painter.drawPixmap(self._drag_pos - QPoint(size // 2, size // 2), pixmap)
+                drag_rect = QRect(
+                    self._drag_pos.x() - size // 2,
+                    self._drag_pos.y() - size // 2,
+                    size,
+                    size,
+                )
+                painter.drawPixmap(drag_rect, pixmap, pixmap.rect())
 
         for (a, b), idx in self.arrows.items():
             self._draw_arrow(painter, a, b, ARROW_COLORS[idx % len(ARROW_COLORS)])
