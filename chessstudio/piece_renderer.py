@@ -83,10 +83,14 @@ class PieceRenderer:
 
     @staticmethod
     def _render_svg(renderer: QSvgRenderer, size: int, device_ratio: float) -> QPixmap:
-        pixel_size = max(1, int(size * device_ratio))
+        pixel_size = max(1, round(size * device_ratio))
         pixmap = QPixmap(pixel_size, pixel_size)
         pixmap.fill(Qt.transparent)
-        pixmap.setDevicePixelRatio(device_ratio)
+        # Pintamos primero en píxeles físicos. Si se establece el DPR antes de
+        # crear el QPainter, Qt convierte sus coordenadas a píxeles lógicos y
+        # ``pixel_size`` se aplica una segunda vez con escalado fraccional.
+        # Ese doble escalado hacía crecer el contenido de las piezas en 125 %
+        # y 150 %. El DPR se asigna después, solo como metadato de visualización.
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
@@ -94,14 +98,16 @@ class PieceRenderer:
         margin = pixel_size * 0.04
         renderer.render(painter, QRectF(margin, margin, pixel_size - 2 * margin, pixel_size - 2 * margin))
         painter.end()
+        pixmap.setDevicePixelRatio(device_ratio)
         return pixmap
 
     @staticmethod
     def _render_glyph(piece: chess.Piece, size: int, device_ratio: float) -> QPixmap:
-        pixel_size = max(1, int(size * device_ratio))
+        pixel_size = max(1, round(size * device_ratio))
         pixmap = QPixmap(pixel_size, pixel_size)
         pixmap.fill(Qt.transparent)
-        pixmap.setDevicePixelRatio(device_ratio)
+        # Véase _render_svg: las fuentes también deben pintarse en coordenadas
+        # físicas antes de etiquetar el pixmap con su DPR.
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.TextAntialiasing)
         font = QFont()
@@ -121,6 +127,7 @@ class PieceRenderer:
         painter.setPen(fill)
         painter.drawText(rect, Qt.AlignCenter, glyph)
         painter.end()
+        pixmap.setDevicePixelRatio(device_ratio)
         return pixmap
 
 
