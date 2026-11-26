@@ -167,6 +167,24 @@ def test_board_drawings_api(qapp):
     assert not board.arrows and not board.marks
 
 
+@pytest.mark.parametrize("dimensions", [(1366, 720), (720, 1366), (1280, 800)])
+def test_board_geometry_is_aligned_on_compact_rectangular_displays(qapp, dimensions):
+    """Pintado y ratón comparten la misma geometría en portátiles 16:9/16:10."""
+    board = BoardWidget()
+    board.resize(*dimensions)
+    size, area = board._board_geometry()
+    assert area.width() == area.height() == size * 8
+
+    for square in chess.SQUARES:
+        rect = board._square_rect(square)
+        assert area.contains(rect)
+        assert board._square_at(rect.center()) == square
+
+    board.flip()
+    for square in chess.SQUARES:
+        assert board._square_at(board._square_rect(square).center()) == square
+
+
 def test_pgn_path_from_command_line(tmp_path):
     from chessstudio.launch import pgn_path_from_arguments
 

@@ -18,6 +18,9 @@ El formato se inspira en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1
 - El explorador de Lichess separa las variantes y las partidas destacadas en
   pestañas internas, para que cada lista pueda ocupar toda la altura disponible
   del panel y leerse con comodidad.
+- El tablero comparte una única geometría para pintado e interacción y fuerza
+  las piezas al rectángulo de cada casilla, corrigiendo desajustes en pantallas
+  de portátil con escalado DPI o proporciones compactas.
 
 ## [0.7.1] — 2026-11-08
 
